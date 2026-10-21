@@ -1,0 +1,20 @@
+# Gradle / build output
+.gradle/
+build/
+captures/
+*.apk
+*.aab
+
+# Local config (SDK path, tokens, keystores)
+local.properties
+*.jks
+*.keystore
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
