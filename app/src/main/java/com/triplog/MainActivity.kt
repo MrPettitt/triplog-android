@@ -7,6 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
@@ -25,7 +26,9 @@ import com.triplog.R
 import com.triplog.ui.navigation.Screen
 import com.triplog.ui.navigation.TripLogNavGraph
 import com.triplog.ui.theme.*
+import com.triplog.data.settings.ThemeSettings
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 data class BottomNavItem(
     val screen: Screen,
@@ -36,17 +39,32 @@ data class BottomNavItem(
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
+    @Inject
+    lateinit var themeSettings: ThemeSettings
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
-            navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
-        )
-
 
         setContent {
-            TripLogTheme {
+            val themeMode by themeSettings.mode.collectAsState()
+            val darkTheme = when (themeMode) {
+                ThemeMode.SYSTEM -> isSystemInDarkTheme()
+                ThemeMode.LIGHT -> false
+                ThemeMode.DARK -> true
+            }
+
+            // Status and navigation bar icons must contrast with the page colour.
+            DisposableEffect(darkTheme) {
+                val bars = if (darkTheme) {
+                    SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+                } else {
+                    SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
+                }
+                enableEdgeToEdge(statusBarStyle = bars, navigationBarStyle = bars)
+                onDispose {}
+            }
+
+            TripLogTheme(darkTheme = darkTheme) {
                 TripLogApp()
             }
         }

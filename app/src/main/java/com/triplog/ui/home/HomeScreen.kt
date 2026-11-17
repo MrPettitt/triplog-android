@@ -10,9 +10,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddLocationAlt
+import androidx.compose.material.icons.filled.BrightnessMedium
 import androidx.compose.material.icons.filled.LocalGasStation
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -47,6 +51,7 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
 
     LazyColumn(
         modifier = Modifier
@@ -55,9 +60,17 @@ fun HomeScreen(
         contentPadding = PaddingValues(bottom = 24.dp)
     ) {
         item {
-            Column(Modifier.padding(horizontal = 20.dp, vertical = 20.dp)) {
-                Text(greeting(), style = MaterialTheme.typography.bodyLarge, color = TextSecondary)
-                Text(stringResource(R.string.home_title), style = MaterialTheme.typography.headlineLarge, color = TextPrimary)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 20.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(greeting(), style = MaterialTheme.typography.bodyLarge, color = TextSecondary)
+                    Text(stringResource(R.string.home_title), style = MaterialTheme.typography.headlineLarge, color = TextPrimary)
+                }
+                ThemeMenuButton(selected = themeMode, onSelect = viewModel::onThemeModeChange)
             }
         }
 
@@ -124,6 +137,46 @@ fun HomeScreen(
             }
         }
     }
+}
+
+/** Round button that opens a small menu to pick System, Light or Dark. */
+@Composable
+private fun ThemeMenuButton(selected: ThemeMode, onSelect: (ThemeMode) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Box {
+        IconButton(
+            onClick = { expanded = true },
+            modifier = Modifier
+                .size(44.dp)
+                .clip(CircleShape)
+                .background(Surface700)
+        ) {
+            Icon(
+                Icons.Default.BrightnessMedium,
+                contentDescription = stringResource(R.string.theme_menu),
+                tint = TextPrimary
+            )
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            ThemeMode.entries.forEach { mode ->
+                DropdownMenuItem(
+                    text = { Text(stringResource(themeLabel(mode))) },
+                    leadingIcon = { RadioButton(selected = mode == selected, onClick = null) },
+                    onClick = {
+                        onSelect(mode)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+private fun themeLabel(mode: ThemeMode): Int = when (mode) {
+    ThemeMode.SYSTEM -> R.string.theme_system
+    ThemeMode.LIGHT -> R.string.theme_light
+    ThemeMode.DARK -> R.string.theme_dark
 }
 
 @Composable

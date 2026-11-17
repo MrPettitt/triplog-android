@@ -6,6 +6,8 @@ import com.triplog.data.local.ALL_MIGRATIONS
 import com.triplog.data.local.AppDatabase
 import com.triplog.data.local.dao.FuelExpenseDao
 import com.triplog.data.local.dao.TripDao
+import com.triplog.data.settings.SettingsStore
+import com.triplog.data.settings.SharedPreferencesStore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -29,4 +31,8 @@ object AppModule {
 
     @Provides
     fun provideFuelExpenseDao(db: AppDatabase): FuelExpenseDao = db.fuelExpenseDao()
+
+    @Provides
+    @Singleton
+    fun provideSettingsStore(store: SharedPreferencesStore): SettingsStore = store
 }
