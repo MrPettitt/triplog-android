@@ -8,16 +8,6 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
-// Release signing: read from keystore.properties (git-ignored) or environment variables.
-// With neither present the release build is left unsigned, so a plain clone still builds.
-val keystoreProperties = Properties().apply {
-    val file = rootProject.file("keystore.properties")
-    if (file.exists()) file.inputStream().use { load(it) }
-}
-
-fun signingValue(property: String, environment: String): String? =
-    keystoreProperties.getProperty(property) ?: System.getenv(environment)
-
 // Backend URL. Set it in local.properties (apiBaseUrl=...), with -PapiBaseUrl=..., or with the
 // API_BASE_URL environment variable. Debug builds can use a different one (apiBaseUrlDebug,
 // API_BASE_URL_DEBUG), for example http://10.0.2.2:8080/api/v1/ for a server on the host machine.
@@ -65,18 +55,6 @@ android {
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
     }
 
-    signingConfigs {
-        val storeFilePath = signingValue("storeFile", "KEYSTORE_FILE")
-        if (storeFilePath != null) {
-            create("release") {
-                storeFile = rootProject.file(storeFilePath)
-                storePassword = signingValue("storePassword", "KEYSTORE_PASSWORD")
-                keyAlias = signingValue("keyAlias", "KEY_ALIAS")
-                keyPassword = signingValue("keyPassword", "KEY_PASSWORD")
-            }
-        }
-    }
-
     buildTypes {
         debug {
             buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrlDebug\"")
@@ -84,7 +62,6 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            signingConfig = signingConfigs.findByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -147,11 +124,9 @@ dependencies {
     // WorkManager
     implementation(libs.work.runtime.ktx)
 
-
     // Image loading
     implementation(libs.coil)
     implementation(libs.exifinterface)
-
 
     // Unit tests
     testImplementation(libs.junit)
