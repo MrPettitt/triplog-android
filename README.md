@@ -80,7 +80,7 @@ The app works fully offline. To enable sync, point it at your API. Any one of th
 
 1. A Gradle property: `./gradlew assembleDebug -PapiBaseUrl=https://api.example.org/api/v1/`
 2. A line in `local.properties` (git-ignored): `apiBaseUrl=https://api.example.org/api/v1/`
-3. The `API_BASE_URL` environment variable (used by the release workflow, see [docs/RELEASING.md](docs/RELEASING.md)).
+3. The `API_BASE_URL` environment variable.
 
 Debug builds can use a different server with `apiBaseUrlDebug` (or `API_BASE_URL_DEBUG`), for example `apiBaseUrlDebug=http://10.0.2.2:8080/api/v1/` for a server running on your computer while using the emulator. Debug builds allow plain `http://`; release builds do not. A trailing slash is added if missing, and the build fails early if the value is not an http(s) URL.
 
@@ -119,10 +119,6 @@ A record is only marked Synced if it was not edited again while the upload was r
 ### Backup
 
 The trip database and receipt photos are included in Android cloud backup and device-to-device transfer (see `res/xml/data_extraction_rules.xml`). Nothing else is. Until the app can download records from the server, this backup is the only way to get your data back on a new phone.
-
-## Releasing
-
-See [docs/RELEASING.md](docs/RELEASING.md) for signing setup and how tagged releases publish a signed APK and AAB.
 
 ## Roadmap
 
