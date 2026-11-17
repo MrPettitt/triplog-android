@@ -33,7 +33,10 @@ import androidx.lifecycle.viewModelScope
 import com.triplog.R
 import com.triplog.data.repository.FuelExpenseRepository
 import com.triplog.domain.model.FuelExpense
+import com.triplog.ui.ExportCsvButton
 import com.triplog.ui.SurfaceCard
+import com.triplog.util.CsvExport
+import java.time.LocalDate
 import com.triplog.ui.TripLogTopBar
 import com.triplog.ui.theme.Brand500
 import com.triplog.ui.theme.Surface900
@@ -91,6 +94,14 @@ fun FuelListScreen(
                         state.expenses.size,
                         state.expenses.size,
                         formatRands(state.totalRands)
+                    )
+                },
+                actions = {
+                    ExportCsvButton(
+                        enabled = state.expenses.isNotEmpty(),
+                        fileName = "triplog-fuel-${LocalDate.now()}.csv",
+                        contentDescription = stringResource(R.string.export_expenses),
+                        buildCsv = { CsvExport.expenses(state.expenses) }
                     )
                 }
             )

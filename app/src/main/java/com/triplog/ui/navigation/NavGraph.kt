@@ -75,7 +75,6 @@ fun TripLogNavGraph(navController: NavHostController) {
         }
         composable(Screen.AllTrips.route) {
             AllTripsScreen(
-                onNavigateBack = { navController.popBackStack() },
                 onTripClick = { open(Screen.EditTrip.routeFor(it)) }
             )
         }
