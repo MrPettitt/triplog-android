@@ -5,9 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.triplog.data.repository.FuelExpenseRepository
 import com.triplog.data.repository.TripRepository
 import com.triplog.domain.model.Trip
-import com.triplog.sync.SyncConfig
-import com.triplog.util.ConnectivityObserver
-import com.triplog.util.NetworkStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -19,11 +16,7 @@ data class HomeUiState(
     val totalTrips: Int = 0,
     val totalDistanceKm: Double = 0.0,
     val totalFuelSpentRands: Double = 0.0,
-    /** Trips and fuel expenses that have not finished syncing. */
-    val pendingSyncCount: Int = 0,
-    val recentTrips: List<Trip> = emptyList(),
-    val networkStatus: NetworkStatus = NetworkStatus.Available,
-    val syncConfigured: Boolean = true
+    val recentTrips: List<Trip> = emptyList()
 )
 
 private const val RECENT_TRIP_LIMIT = 5
@@ -31,44 +24,24 @@ private const val RECENT_TRIP_LIMIT = 5
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     tripRepository: TripRepository,
-    fuelExpenseRepository: FuelExpenseRepository,
-    connectivityObserver: ConnectivityObserver,
-    syncConfig: SyncConfig
+    fuelExpenseRepository: FuelExpenseRepository
 ) : ViewModel() {
 
-    private data class Totals(val trips: Int, val distanceKm: Double, val fuelSpentRands: Double)
-
-    private val totals = combine(
+    val uiState: StateFlow<HomeUiState> = combine(
         tripRepository.totalTripCount,
         tripRepository.totalDistanceKm,
-        fuelExpenseRepository.totalExpenseRands
-    ) { trips, distanceKm, fuelSpent ->
-        Totals(trips, distanceKm ?: 0.0, fuelSpent ?: 0.0)
-    }
-
-    private val pending = combine(
-        tripRepository.pendingSyncCount,
-        fuelExpenseRepository.pendingSyncCount
-    ) { tripsPending, expensesPending -> tripsPending + expensesPending }
-
-    val uiState: StateFlow<HomeUiState> = combine(
-        totals,
-        pending,
-        tripRepository.allTrips,
-        connectivityObserver.networkStatus
-    ) { totals, pending, trips, network ->
+        fuelExpenseRepository.totalExpenseRands,
+        tripRepository.allTrips
+    ) { tripCount, distanceKm, fuelSpent, trips ->
         HomeUiState(
-            totalTrips = totals.trips,
-            totalDistanceKm = totals.distanceKm,
-            totalFuelSpentRands = totals.fuelSpentRands,
-            pendingSyncCount = pending,
-            recentTrips = trips.take(RECENT_TRIP_LIMIT),
-            networkStatus = network,
-            syncConfigured = syncConfig.isConfigured
+            totalTrips = tripCount,
+            totalDistanceKm = distanceKm ?: 0.0,
+            totalFuelSpentRands = fuelSpent ?: 0.0,
+            recentTrips = trips.take(RECENT_TRIP_LIMIT)
         )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = HomeUiState(syncConfigured = syncConfig.isConfigured)
+        initialValue = HomeUiState()
     )
 }

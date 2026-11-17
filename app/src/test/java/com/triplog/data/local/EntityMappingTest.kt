@@ -22,8 +22,6 @@ class EntityMappingTest {
             distanceKm = 42.5,
             purpose = TripPurpose.SITE_INSPECTION,
             notes = "Bring hard hat",
-            isSynced = true,
-            remoteId = "abc",
             createdAt = LocalDateTime.of(2026, 5, 1, 8, 31)
         )
         assertEquals(trip, TripEntity.fromDomain(trip).toDomain())
@@ -51,8 +49,6 @@ class EntityMappingTest {
             odometerKm = 84320,
             fuelStation = "Engen Sandton",
             receiptImagePath = "/data/receipt.jpg",
-            isSynced = false,
-            remoteId = null,
             createdAt = LocalDateTime.of(2026, 5, 2, 17, 0)
         )
         assertEquals(expense, FuelExpenseEntity.fromDomain(expense).toDomain())

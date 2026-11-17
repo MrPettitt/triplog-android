@@ -7,9 +7,7 @@ import com.triplog.data.repository.TripRepository
 import com.triplog.domain.model.FuelExpense
 import com.triplog.domain.model.Trip
 import com.triplog.domain.model.TripPurpose
-import com.triplog.testutil.FakeApiService
 import com.triplog.testutil.FakeFuelExpenseDao
-import com.triplog.testutil.FakeSyncScheduler
 import com.triplog.testutil.FakeTripDao
 import com.triplog.testutil.MainDispatcherRule
 import com.triplog.ui.expenses.FuelExpenseViewModel
@@ -33,9 +31,9 @@ class EditModeViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val tripDao = FakeTripDao()
-    private val tripRepository = TripRepository(tripDao, FakeApiService(), FakeSyncScheduler())
+    private val tripRepository = TripRepository(tripDao)
     private val expenseDao = FakeFuelExpenseDao()
-    private val expenseRepository = FuelExpenseRepository(expenseDao, FakeApiService(), FakeSyncScheduler())
+    private val expenseRepository = FuelExpenseRepository(expenseDao)
 
     private fun savedTrip(): Long = runBlocking {
         tripRepository.saveTrip(
@@ -103,7 +101,6 @@ class EditModeViewModelTest {
         assertEquals(id, stored.id)
         assertEquals("Warehouse", stored.toLocation)
         assertEquals(50.5, stored.distanceKm, 0.0)
-        assertFalse(stored.isSynced)
     }
 
     @Test
@@ -189,7 +186,6 @@ class EditModeViewModelTest {
         assertEquals(id, stored.id)
         assertEquals("Shell", stored.fuelStation)
         assertEquals(LocalDate.of(2026, 3, 1), stored.date)
-        assertFalse(stored.isSynced)
     }
 
     @Test

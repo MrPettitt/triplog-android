@@ -1,10 +1,8 @@
 package com.triplog.data.repository
 
 import com.triplog.domain.model.FuelExpense
-import com.triplog.sync.SyncResult
-import com.triplog.testutil.FakeApiService
 import com.triplog.testutil.FakeFuelExpenseDao
-import com.triplog.testutil.FakeSyncScheduler
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -13,8 +11,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.IOException
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 class FuelExpenseRepositoryTest {
 
@@ -22,134 +20,111 @@ class FuelExpenseRepositoryTest {
     val tempFolder = TemporaryFolder()
 
     private val dao = FakeFuelExpenseDao()
-    private val api = FakeApiService()
-    private val scheduler = FakeSyncScheduler()
-    private val repository = FuelExpenseRepository(dao, api, scheduler)
+    private val repository = FuelExpenseRepository(dao)
 
-    private fun expense(receiptPath: String? = null) = FuelExpense(
-        date = LocalDate.of(2026, 1, 1),
+    private fun expense(
+        station: String = "Engen",
+        date: LocalDate = LocalDate.of(2026, 1, 1),
+        amount: Double = 900.0,
+        receiptPath: String? = null
+    ) = FuelExpense(
+        date = date,
         litres = 40.0,
-        amountRands = 900.5,
-        odometerKm = 84320,
-        fuelStation = "Engen Sandton",
+        amountRands = amount,
+        odometerKm = 1000,
+        fuelStation = station,
         receiptImagePath = receiptPath
     )
 
-    private fun receiptFile() = tempFolder.newFile("receipt.jpg").apply { writeText("jpeg") }
+    private fun receiptFile(name: String) = tempFolder.newFile(name).apply { writeText("jpeg") }
 
     @Test
-    fun saveExpense_storesUnsyncedExpenseAndRequestsSync() = runTest {
-        repository.saveExpense(expense())
+    fun saveExpense_storesItAndReturnsTheId() = runTest {
+        val id = repository.saveExpense(expense("Shell"))
 
-        assertFalse(dao.expenses.value.single().isSynced)
-        assertEquals(1, scheduler.requests)
+        assertEquals("Shell", repository.getExpense(id)!!.fuelStation)
     }
 
     @Test
-    fun sync_marksExpenseSyncedAndSendsExpectedRequest() = runTest {
-        repository.saveExpense(expense())
+    fun allExpenses_areNewestFirst() = runTest {
+        repository.saveExpense(expense("old", date = LocalDate.of(2026, 1, 1)))
+        repository.saveExpense(expense("new", date = LocalDate.of(2026, 3, 1)))
+        repository.saveExpense(expense("middle", date = LocalDate.of(2026, 2, 1)))
 
-        val result = repository.syncPendingExpenses()
-
-        assertEquals(SyncResult(synced = 1), result)
-        val stored = dao.expenses.value.single()
-        assertTrue(stored.isSynced)
-        assertEquals("remote-expense", stored.remoteId)
-
-        val request = api.expenseRequests.single()
-        assertEquals(stored.clientId, request.clientId)
-        assertEquals(listOf(stored.clientId), api.idempotencyKeys)
-        assertEquals("2026-01-01", request.date)
-        assertEquals(900.5, request.amountRands, 0.0)
-        assertEquals(84320, request.odometerKm)
-        assertEquals("Engen Sandton", request.fuelStation)
+        assertEquals(listOf("new", "middle", "old"), repository.allExpenses.first().map { it.fuelStation })
     }
 
     @Test
-    fun sync_uploadsReceiptWhenFileExists() = runTest {
-        repository.saveExpense(expense(receiptPath = receiptFile().absolutePath))
+    fun total_followsTheStoredExpenses() = runTest {
+        assertNull(repository.totalExpenseRands.first())
 
-        repository.syncPendingExpenses()
+        repository.saveExpense(expense(amount = 100.5))
+        repository.saveExpense(expense(amount = 200.0))
 
-        assertEquals(listOf("remote-expense"), api.receiptUploads)
-        assertTrue(dao.expenses.value.single().isSynced)
+        assertEquals(300.5, repository.totalExpenseRands.first()!!, 0.0)
     }
 
     @Test
-    fun sync_failedReceiptUpload_keepsExpensePendingButRemembersRemoteId() = runTest {
-        api.receiptBehaviour = { FakeApiService.serverError() }
-        repository.saveExpense(expense(receiptPath = receiptFile().absolutePath))
+    fun updateExpense_changesFieldsButKeepsIdAndCreationTime() = runTest {
+        val id = repository.saveExpense(expense("Before"))
+        val original = repository.getExpense(id)!!
 
-        val result = repository.syncPendingExpenses()
+        repository.updateExpense(original.copy(fuelStation = "After", litres = 12.5, createdAt = LocalDateTime.MAX))
 
-        assertEquals(SyncResult(retryable = 1), result)
-        val stored = dao.expenses.value.single()
-        assertFalse(stored.isSynced)
-        assertEquals("remote-expense", stored.remoteId)
+        val edited = repository.getExpense(id)!!
+        assertEquals("After", edited.fuelStation)
+        assertEquals(12.5, edited.litres, 0.0)
+        assertEquals(original.createdAt, edited.createdAt)
+        assertEquals(1, dao.expenses.value.size)
     }
 
     @Test
-    fun sync_retriesOnlyTheReceiptAfterAFailedUpload() = runTest {
-        api.receiptBehaviour = { throw IOException("dropped") }
-        repository.saveExpense(expense(receiptPath = receiptFile().absolutePath))
-        repository.syncPendingExpenses()
+    fun updateExpense_withANewReceipt_deletesTheOldPhoto() = runTest {
+        val old = receiptFile("old.jpg")
+        val new = receiptFile("new.jpg")
+        val id = repository.saveExpense(expense(receiptPath = old.absolutePath))
 
-        api.receiptBehaviour = { id ->
-            retrofit2.Response.success(
-                com.triplog.data.remote.dto.ApiResponse(true, FakeApiService.expenseDto(id), null)
-            )
-        }
-        val result = repository.syncPendingExpenses()
+        repository.updateExpense(repository.getExpense(id)!!.copy(receiptImagePath = new.absolutePath))
 
-        assertEquals(SyncResult(synced = 1), result)
-        assertEquals("Expense must not be created twice", 1, api.expenseRequests.size)
-        assertEquals(2, api.receiptUploads.size)
-        assertTrue(dao.expenses.value.single().isSynced)
+        assertFalse(old.exists())
+        assertTrue(new.exists())
     }
 
     @Test
-    fun sync_skipsReceiptUploadWhenFileIsMissing() = runTest {
-        repository.saveExpense(expense(receiptPath = "/does/not/exist.jpg"))
+    fun updateExpense_withTheSameReceipt_keepsThePhoto() = runTest {
+        val photo = receiptFile("same.jpg")
+        val id = repository.saveExpense(expense(receiptPath = photo.absolutePath))
 
-        repository.syncPendingExpenses()
+        repository.updateExpense(repository.getExpense(id)!!.copy(litres = 5.0))
 
-        assertTrue(api.receiptUploads.isEmpty())
-        assertTrue(dao.expenses.value.single().isSynced)
+        assertTrue(photo.exists())
     }
 
     @Test
-    fun sync_serverError_leavesExpensePendingWithoutRemoteId() = runTest {
-        api.createExpenseBehaviour = { FakeApiService.serverError() }
-        repository.saveExpense(expense())
+    fun updateExpense_ofAMissingExpense_doesNothing() = runTest {
+        repository.updateExpense(expense().copy(id = 42))
 
-        val result = repository.syncPendingExpenses()
-
-        assertEquals(SyncResult(retryable = 1), result)
-        val stored = dao.expenses.value.single()
-        assertFalse(stored.isSynced)
-        assertNull(stored.remoteId)
-        assertTrue(api.receiptUploads.isEmpty())
+        assertTrue(dao.expenses.value.isEmpty())
     }
 
     @Test
-    fun sync_clientError_isRejectedNotRetried() = runTest {
-        api.createExpenseBehaviour = { FakeApiService.httpError(400) }
-        repository.saveExpense(expense())
+    fun deleteExpense_removesItAndItsReceiptPhoto() = runTest {
+        val photo = receiptFile("receipt.jpg")
+        val id = repository.saveExpense(expense(receiptPath = photo.absolutePath))
 
-        val result = repository.syncPendingExpenses()
+        repository.deleteExpense(id)
 
-        assertEquals(SyncResult(rejected = 1), result)
-        assertFalse(result.shouldRetry)
+        assertNull(repository.getExpense(id))
+        assertTrue(repository.allExpenses.first().isEmpty())
+        assertFalse(photo.exists())
     }
 
     @Test
-    fun sync_networkException_isRetryableAndLeavesExpensePending() = runTest {
-        api.createExpenseBehaviour = { throw IOException("offline") }
-        repository.saveExpense(expense())
+    fun deleteExpense_whenThePhotoIsAlreadyGone_stillSucceeds() = runTest {
+        val id = repository.saveExpense(expense(receiptPath = "/does/not/exist.jpg"))
 
-        val result = repository.syncPendingExpenses()
+        repository.deleteExpense(id)
 
-        assertEquals(SyncResult(retryable = 1), result)
-        assertFalse(dao.expenses.value.single().isSynced)
+        assertTrue(dao.expenses.value.isEmpty())
     }
 }

@@ -39,4 +39,43 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
     }
 }
 
-val ALL_MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3)
+/**
+ * Version 3 to 4: the app no longer syncs, so the sync columns (client id, synced flag, remote
+ * id, revision, deletion tombstone, receipt uploaded flag) are dropped. Records that were only
+ * marked as deleted are removed for good. SQLite cannot drop columns on older Android versions,
+ * so each table is rebuilt.
+ */
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("DELETE FROM trips WHERE isDeleted = 1")
+        db.execSQL("DELETE FROM fuel_expenses WHERE isDeleted = 1")
+
+        db.execSQL(
+            "CREATE TABLE trips_new (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "fromLocation TEXT NOT NULL, toLocation TEXT NOT NULL, dateTime TEXT NOT NULL, " +
+                "distanceKm REAL NOT NULL, purpose TEXT NOT NULL, notes TEXT NOT NULL, " +
+                "createdAt TEXT NOT NULL)"
+        )
+        db.execSQL(
+            "INSERT INTO trips_new (id, fromLocation, toLocation, dateTime, distanceKm, purpose, notes, createdAt) " +
+                "SELECT id, fromLocation, toLocation, dateTime, distanceKm, purpose, notes, createdAt FROM trips"
+        )
+        db.execSQL("DROP TABLE trips")
+        db.execSQL("ALTER TABLE trips_new RENAME TO trips")
+
+        db.execSQL(
+            "CREATE TABLE fuel_expenses_new (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "date TEXT NOT NULL, litres REAL NOT NULL, amountRands REAL NOT NULL, " +
+                "odometerKm INTEGER NOT NULL, fuelStation TEXT NOT NULL, receiptImagePath TEXT, " +
+                "createdAt TEXT NOT NULL)"
+        )
+        db.execSQL(
+            "INSERT INTO fuel_expenses_new (id, date, litres, amountRands, odometerKm, fuelStation, receiptImagePath, createdAt) " +
+                "SELECT id, date, litres, amountRands, odometerKm, fuelStation, receiptImagePath, createdAt FROM fuel_expenses"
+        )
+        db.execSQL("DROP TABLE fuel_expenses")
+        db.execSQL("ALTER TABLE fuel_expenses_new RENAME TO fuel_expenses")
+    }
+}
+
+val ALL_MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)

@@ -3,8 +3,6 @@ package com.triplog.ui
 import androidx.lifecycle.SavedStateHandle
 import com.triplog.R
 import com.triplog.data.repository.FuelExpenseRepository
-import com.triplog.testutil.FakeApiService
-import com.triplog.testutil.FakeSyncScheduler
 import com.triplog.testutil.FakeFuelExpenseDao
 import com.triplog.testutil.MainDispatcherRule
 import com.triplog.ui.expenses.FuelExpenseViewModel
@@ -22,7 +20,7 @@ class FuelExpenseViewModelTest {
 
     private val dao = FakeFuelExpenseDao()
     private val viewModel = FuelExpenseViewModel(
-        FuelExpenseRepository(dao, FakeApiService(), FakeSyncScheduler()),
+        FuelExpenseRepository(dao),
         SavedStateHandle()
     )
 
@@ -47,7 +45,6 @@ class FuelExpenseViewModelTest {
         assertEquals(84320, stored.odometerKm)
         assertEquals("Engen Sandton", stored.fuelStation)
         assertEquals("/data/receipt.jpg", stored.receiptImagePath)
-        assertFalse(stored.isSynced)
     }
 
     @Test

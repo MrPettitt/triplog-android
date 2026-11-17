@@ -21,14 +21,11 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.work.*
 import com.triplog.R
 import com.triplog.ui.navigation.Screen
 import com.triplog.ui.navigation.TripLogNavGraph
 import com.triplog.ui.theme.*
-import com.triplog.worker.SyncWorker
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
 
 data class BottomNavItem(
     val screen: Screen,
@@ -39,8 +36,6 @@ data class BottomNavItem(
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    @Inject
-    lateinit var workManager: WorkManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,12 +44,6 @@ class MainActivity : ComponentActivity() {
             navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
         )
 
-        // Schedule periodic background sync
-        workManager.enqueueUniquePeriodicWork(
-            SyncWorker.PERIODIC_WORK_NAME,
-            ExistingPeriodicWorkPolicy.KEEP,
-            SyncWorker.buildPeriodicRequest()
-        )
 
         setContent {
             TripLogTheme {

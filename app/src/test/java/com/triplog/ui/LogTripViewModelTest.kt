@@ -4,8 +4,6 @@ import androidx.lifecycle.SavedStateHandle
 import com.triplog.R
 import com.triplog.data.repository.TripRepository
 import com.triplog.domain.model.TripPurpose
-import com.triplog.testutil.FakeApiService
-import com.triplog.testutil.FakeSyncScheduler
 import com.triplog.testutil.FakeTripDao
 import com.triplog.testutil.MainDispatcherRule
 import com.triplog.ui.logtrip.LogTripViewModel
@@ -22,7 +20,7 @@ class LogTripViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val dao = FakeTripDao()
-    private val viewModel = LogTripViewModel(TripRepository(dao, FakeApiService(), FakeSyncScheduler()), SavedStateHandle())
+    private val viewModel = LogTripViewModel(TripRepository(dao), SavedStateHandle())
 
     private fun fillValidForm() {
         viewModel.onFromLocationChange("  Head Office ")
@@ -49,7 +47,6 @@ class LogTripViewModelTest {
         assertEquals(42.5, stored.distanceKm, 0.0)
         assertEquals("DELIVERY", stored.purpose)
         assertEquals("parcels", stored.notes)
-        assertFalse(stored.isSynced)
     }
 
     @Test

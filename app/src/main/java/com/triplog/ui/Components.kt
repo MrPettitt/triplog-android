@@ -58,22 +58,6 @@ fun TripLogTopBar(title: String, subtitle: String? = null, onBack: (() -> Unit)?
     }
 }
 
-@Composable
-fun SyncStatusChip(isSynced: Boolean) {
-    val color = if (isSynced) GreenSync else Amber400
-    val label = stringResource(if (isSynced) R.string.status_synced else R.string.status_pending)
-    Row(
-        modifier = Modifier
-            .clip(RoundedCornerShape(50))
-            .background(color.copy(alpha = 0.14f))
-            .padding(horizontal = 10.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(Modifier.size(6.dp).clip(CircleShape).background(color))
-        Spacer(Modifier.width(6.dp))
-        Text(label, style = MaterialTheme.typography.labelSmall, color = color)
-    }
-}
 
 @Composable
 fun SurfaceCard(
@@ -110,7 +94,6 @@ fun TripCard(trip: Trip, onClick: (() -> Unit)? = null) {
                     .background(Brand400.copy(alpha = 0.14f))
                     .padding(horizontal = 10.dp, vertical = 4.dp)
             )
-            SyncStatusChip(isSynced = trip.isSynced)
         }
         Spacer(Modifier.height(12.dp))
         RoutePoint(trip.fromLocation, filled = false)
