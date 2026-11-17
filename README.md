@@ -1,8 +1,20 @@
-# TripLog
+<div align="center">
 
-**A simple Android app for logging work trips and fuel expenses. Everything stays on the device.**
+# 🚗 TripLog
 
-Built with Kotlin, Jetpack Compose, Room and Hilt. Log a trip or a fuel fill-up, attach a receipt photo, and look it up again later. There is no account, no server and no network access.
+**Log work trips and fuel expenses. Everything stays on your phone.**
+
+[![CI](https://github.com/MrPettitt/triplog-android/actions/workflows/ci.yml/badge.svg)](https://github.com/MrPettitt/triplog-android/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/MrPettitt/triplog-android?color=2ea44f&label=release)](https://github.com/MrPettitt/triplog-android/releases)
+![Kotlin](https://img.shields.io/badge/Kotlin-Compose-7F52FF?logo=kotlin&logoColor=white)
+![Android](https://img.shields.io/badge/Android-API%2026%2B-3DDC84?logo=android&logoColor=white)
+![Tests](https://img.shields.io/badge/unit%20tests-104-brightgreen)
+![Offline](https://img.shields.io/badge/network-none-lightgrey)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
+No account. No server. No internet permission.
+
+</div>
 
 <p align="center">
   <img src="docs/screenshots/home.png" width="23%" alt="Home dashboard" />
@@ -15,6 +27,46 @@ Built with Kotlin, Jetpack Compose, Room and Hilt. Log a trip or a fuel fill-up,
   <img src="docs/screenshots/home-light.png" width="23%" alt="Home dashboard, light theme" />
   <img src="docs/screenshots/all-trips-light.png" width="23%" alt="All trips list, light theme" />
 </p>
+
+## At a glance
+
+| | |
+|---|---|
+| 🧭 **Trips** | Log, edit, delete, search and filter |
+| ⛽ **Fuel** | Amount, litres, odometer, station and a receipt photo |
+| 📊 **Summary** | One card per month, with a monthly fuel budget and progress bar |
+| 📤 **Export** | CSV through the Android share sheet |
+| 🌗 **Themes** | Light, dark or follow the system |
+| 🔒 **Privacy** | Local Room database, no network access |
+
+## Project status
+
+Current version: **v1.8.0**. This is a demo project: there is no signing key, no published APK and nothing external to manage.
+
+| Check | Status | Notes |
+|---|---|---|
+| Lint | ✅ Passing | Runs in CI on every push and PR |
+| Unit tests | ✅ 104 passing | ViewModels, repositories, migrations, formatters, filters, summary, budget, CSV |
+| Debug build | ✅ Passing | Built in CI |
+| Emulator run | ✅ Checked | Pixel-style AVD, API 35: trips, fuel, summary, budget warning, themes |
+| Data migrations | ✅ Tested | Schema v1 to v4 covered by migration tests |
+| Accessibility | ✅ WCAG AA text contrast | Both themes, 16sp body text |
+| Budget: change, remove, over-budget red state | 🟡 Unit tested, not yet checked on screen | |
+| Upgrade from a real v1.2.0 install | 🟡 Not checked on a device | Migration tests pass |
+| CSV opened in Excel or Sheets | 🟡 Not checked | Format is tested, UTF-8 with ISO dates |
+
+## Release history
+
+| Version | What it added |
+|---|---|
+| v1.8.0 | Monthly fuel budget |
+| v1.7.0 | Light theme and theme picker |
+| v1.6.0 | Monthly summary |
+| v1.5.0 | Search and filters |
+| v1.4.0 | CSV export |
+| v1.3.0 | Fully local: sync code, signing and external services removed |
+| v1.2.0 | Edit and delete, data safety |
+| v1.0.0 | First release |
 
 ## Features
 
