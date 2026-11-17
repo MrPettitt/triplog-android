@@ -15,6 +15,15 @@ interface ApiService {
         @Body request: CreateTripRequest
     ): Response<ApiResponse<TripDto>>
 
+    @PUT("trips/{id}")
+    suspend fun updateTrip(
+        @Path("id") tripId: String,
+        @Body request: CreateTripRequest
+    ): Response<ApiResponse<TripDto>>
+
+    @DELETE("trips/{id}")
+    suspend fun deleteTrip(@Path("id") tripId: String): Response<Unit>
+
     @GET("trips")
     suspend fun getTrips(): Response<ApiResponse<List<TripDto>>>
 
@@ -24,6 +33,15 @@ interface ApiService {
         @Header("Idempotency-Key") idempotencyKey: String,
         @Body request: CreateExpenseRequest
     ): Response<ApiResponse<FuelExpenseDto>>
+
+    @PUT("fuel-expenses/{id}")
+    suspend fun updateExpense(
+        @Path("id") expenseId: String,
+        @Body request: CreateExpenseRequest
+    ): Response<ApiResponse<FuelExpenseDto>>
+
+    @DELETE("fuel-expenses/{id}")
+    suspend fun deleteExpense(@Path("id") expenseId: String): Response<Unit>
 
     @Multipart
     @POST("fuel-expenses/{id}/receipt")

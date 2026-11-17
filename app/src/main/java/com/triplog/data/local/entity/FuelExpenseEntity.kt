@@ -21,7 +21,16 @@ data class FuelExpenseEntity(
     val receiptImagePath: String?,
     val isSynced: Boolean,
     val remoteId: String?,
-    val createdAt: LocalDateTime
+    val createdAt: LocalDateTime,
+    /** Bumped on every local change so a finished upload never marks newer edits as synced. */
+    @ColumnInfo(defaultValue = "0")
+    val revision: Int = 0,
+    /** Tombstone: hidden from the UI, removed locally once the server has deleted it. */
+    @ColumnInfo(defaultValue = "0")
+    val isDeleted: Boolean = false,
+    /** True once the receipt photo has been uploaded for the current file. */
+    @ColumnInfo(defaultValue = "0")
+    val receiptUploaded: Boolean = false
 ) {
     fun toDomain(): FuelExpense = FuelExpense(
         id = id,

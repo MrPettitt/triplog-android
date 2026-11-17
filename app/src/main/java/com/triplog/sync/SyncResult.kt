@@ -33,3 +33,7 @@ fun SyncOutcome.toResult(): SyncResult = when (this) {
     SyncOutcome.Retryable -> SyncResult(retryable = 1)
     SyncOutcome.Rejected -> SyncResult(rejected = 1)
 }
+
+/** Like [outcomeForHttpCode], but a record the server no longer has (404 or 410) is already deleted. */
+fun outcomeForDeleteCode(code: Int): SyncOutcome =
+    if (code == 404 || code == 410) SyncOutcome.Success else outcomeForHttpCode(code)

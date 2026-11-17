@@ -10,7 +10,7 @@ import com.triplog.data.local.entity.TripEntity
 
 @Database(
     entities = [TripEntity::class, FuelExpenseEntity::class],
-    version = 2,
+    version = 3,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

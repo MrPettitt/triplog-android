@@ -2,6 +2,7 @@ package com.triplog.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -75,21 +76,26 @@ fun SyncStatusChip(isSynced: Boolean) {
 }
 
 @Composable
-fun SurfaceCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+fun SurfaceCard(
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit
+) {
     Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(CardShape)
             .background(Surface700)
             .border(1.dp, Surface600, CardShape)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(16.dp),
         content = content
     )
 }
 
 @Composable
-fun TripCard(trip: Trip) {
-    SurfaceCard {
+fun TripCard(trip: Trip, onClick: (() -> Unit)? = null) {
+    SurfaceCard(onClick = onClick) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
