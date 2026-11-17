@@ -18,3 +18,4 @@ local.properties
 # OS
 .DS_Store
 Thumbs.db
+keystore.properties
