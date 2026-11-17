@@ -83,6 +83,7 @@
     <string name="action_save_changes">Save changes</string>
     <string name="action_delete">Delete</string>
     <string name="action_cancel">Cancel</string>
+    <string name="action_save">Save</string>
     <string name="action_ok">OK</string>
     <string name="delete_trip_title">Delete this trip?</string>
     <string name="delete_trip_message">This trip will be removed from this device. This cannot be undone.</string>
@@ -144,6 +145,20 @@
         <item quantity="other">%d fill-ups</item>
     </plurals>
     <string name="export_summary">Export monthly summary as CSV</string>
+
+    <!-- Monthly budget -->
+    <string name="budget_title">Fuel budget this month</string>
+    <string name="budget_none">No budget set. Set a monthly fuel budget to track your spending.</string>
+    <string name="budget_set">Set budget</string>
+    <string name="budget_edit">Change</string>
+    <string name="budget_dialog_title">Monthly fuel budget</string>
+    <string name="budget_field_label">Budget (R)</string>
+    <string name="budget_error">Enter an amount greater than zero</string>
+    <string name="budget_remove">Remove</string>
+    <string name="budget_spent_of">%1$s of %2$s</string>
+    <string name="budget_remaining">%1$s left</string>
+    <string name="budget_over">%1$s over budget</string>
+    <string name="budget_near">Close to your budget - %1$s left</string>
 
     <!-- Theme -->
     <string name="theme_menu">Choose theme</string>

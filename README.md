@@ -21,6 +21,7 @@ Built with Kotlin, Jetpack Compose, Room and Hilt. Log a trip or a fuel fill-up,
 - **Trip logging**: start and end location, distance, purpose, date, time and notes. Tap a trip to edit or delete it.
 - **Fuel expenses**: date, litres, amount (ZAR), odometer, station and a receipt photo, with a list of past expenses. Tap one to edit or delete it.
 - **Monthly summary**: a Summary tab with one card per month that has activity: number of trips, distance, fuel spend, litres and fill-ups. It can be exported as CSV too.
+- **Monthly fuel budget**: set a budget on the Summary tab and a progress bar shows this month's fuel spend against it (green, amber from 80%, red when over). Months that went over are flagged. The budget is stored on the device and can be changed or removed at any time.
 - **Search and filters**: the Trips and Fuel screens have a search box and date range chips (all time, this month, last 30 days, this year); trips can also be filtered by purpose. The list, the totals and the CSV export all follow the filter.
 - **CSV export**: the share button on the Trips and Fuel screens exports the list as a CSV file (ISO dates, dot decimals, UTF-8, safe against spreadsheet formulas) and opens the Android share sheet. The app never sends the file anywhere itself.
 - **Local storage**: everything is stored in a Room (SQLite) database on the device. The app has no internet permission.
