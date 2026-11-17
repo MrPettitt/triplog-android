@@ -64,7 +64,7 @@ fun LogTripScreen(
         TripLogTopBar(
             title = stringResource(if (state.isEditing) R.string.edit_trip_title else R.string.log_trip_title),
             subtitle = stringResource(if (state.isEditing) R.string.edit_trip_subtitle else R.string.log_trip_subtitle),
-            onBack = onNavigateBack
+            onBack = if (state.isEditing) onNavigateBack else null
         )
 
         Column(

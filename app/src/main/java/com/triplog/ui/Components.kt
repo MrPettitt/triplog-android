@@ -30,7 +30,12 @@ private val FieldShape = RoundedCornerShape(14.dp)
 private val TripDateFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM, HH:mm")
 
 @Composable
-fun TripLogTopBar(title: String, subtitle: String? = null, onBack: (() -> Unit)? = null) {
+fun TripLogTopBar(
+    title: String,
+    subtitle: String? = null,
+    onBack: (() -> Unit)? = null,
+    actions: @Composable RowScope.() -> Unit = {}
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -49,12 +54,13 @@ fun TripLogTopBar(title: String, subtitle: String? = null, onBack: (() -> Unit)?
             }
             Spacer(Modifier.width(14.dp))
         }
-        Column {
+        Column(modifier = Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.headlineMedium, color = TextPrimary)
             if (subtitle != null) {
                 Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
             }
         }
+        actions()
     }
 }
 

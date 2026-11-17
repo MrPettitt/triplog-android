@@ -18,7 +18,10 @@ import androidx.lifecycle.viewModelScope
 import com.triplog.R
 import com.triplog.data.repository.TripRepository
 import com.triplog.domain.model.Trip
+import com.triplog.ui.ExportCsvButton
 import com.triplog.ui.TripCard
+import com.triplog.util.CsvExport
+import java.time.LocalDate
 import com.triplog.ui.TripLogTopBar
 import com.triplog.ui.theme.*
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -38,11 +41,11 @@ class AllTripsViewModel @Inject constructor(tripRepository: TripRepository) : Vi
 
 @Composable
 fun AllTripsScreen(
-    onNavigateBack: () -> Unit,
     onTripClick: (Long) -> Unit,
     viewModel: AllTripsViewModel = hiltViewModel()
 ) {
     val trips by viewModel.trips.collectAsStateWithLifecycle()
+    val resources = LocalContext.current.resources
 
     Column(
         modifier = Modifier
@@ -51,8 +54,17 @@ fun AllTripsScreen(
     ) {
         TripLogTopBar(
             title = stringResource(R.string.all_trips_title),
-            subtitle = if (trips.isEmpty()) null else LocalContext.current.resources.getQuantityString(R.plurals.all_trips_subtitle, trips.size, trips.size),
-            onBack = onNavigateBack
+            subtitle = if (trips.isEmpty()) null else resources.getQuantityString(R.plurals.all_trips_subtitle, trips.size, trips.size),
+            actions = {
+                ExportCsvButton(
+                    enabled = trips.isNotEmpty(),
+                    fileName = "triplog-trips-${LocalDate.now()}.csv",
+                    contentDescription = stringResource(R.string.export_trips),
+                    buildCsv = {
+                        CsvExport.trips(trips) { purpose -> resources.getString(purpose.labelRes) }
+                    }
+                )
+            }
         )
 
         if (trips.isEmpty()) {

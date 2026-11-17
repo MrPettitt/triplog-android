@@ -108,4 +108,10 @@
     <string name="fuel_list_add">Add expense</string>
     <string name="fuel_card_litres_odometer">%1$s L at %2$s km</string>
     <string name="receipt_attached">Receipt attached</string>
+
+    <!-- Export -->
+    <string name="export_trips">Export trips as CSV</string>
+    <string name="export_expenses">Export fuel expenses as CSV</string>
+    <string name="export_chooser_title">Share CSV file</string>
+    <string name="export_failed">The file could not be shared.</string>
 </resources>
