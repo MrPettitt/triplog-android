@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.triplog.data.repository.FuelExpenseRepository
 import com.triplog.data.repository.TripRepository
+import com.triplog.data.settings.ThemeSettings
 import com.triplog.domain.model.Trip
+import com.triplog.ui.theme.ThemeMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -24,8 +26,13 @@ private const val RECENT_TRIP_LIMIT = 5
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     tripRepository: TripRepository,
-    fuelExpenseRepository: FuelExpenseRepository
+    fuelExpenseRepository: FuelExpenseRepository,
+    private val themeSettings: ThemeSettings
 ) : ViewModel() {
+
+    val themeMode: StateFlow<ThemeMode> = themeSettings.mode
+
+    fun onThemeModeChange(mode: ThemeMode) = themeSettings.setMode(mode)
 
     val uiState: StateFlow<HomeUiState> = combine(
         tripRepository.totalTripCount,

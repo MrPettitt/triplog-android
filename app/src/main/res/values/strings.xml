@@ -144,4 +144,10 @@
         <item quantity="other">%d fill-ups</item>
     </plurals>
     <string name="export_summary">Export monthly summary as CSV</string>
+
+    <!-- Theme -->
+    <string name="theme_menu">Choose theme</string>
+    <string name="theme_system">Follow system</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
 </resources>

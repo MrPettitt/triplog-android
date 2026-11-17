@@ -11,6 +11,11 @@ Built with Kotlin, Jetpack Compose, Room and Hilt. Log a trip or a fuel fill-up,
   <img src="docs/screenshots/all-trips.png" width="23%" alt="All trips list" />
 </p>
 
+<p align="center">
+  <img src="docs/screenshots/home-light.png" width="23%" alt="Home dashboard, light theme" />
+  <img src="docs/screenshots/all-trips-light.png" width="23%" alt="All trips list, light theme" />
+</p>
+
 ## Features
 
 - **Trip logging**: start and end location, distance, purpose, date, time and notes. Tap a trip to edit or delete it.
@@ -21,7 +26,7 @@ Built with Kotlin, Jetpack Compose, Room and Hilt. Log a trip or a fuel fill-up,
 - **Local storage**: everything is stored in a Room (SQLite) database on the device. The app has no internet permission.
 - **Receipt photos**: taken with the device camera app (no camera permission needed) and shrunk to 1600 px on the long side. Deleting or replacing a receipt removes the old photo from storage.
 - **Input checks**: comma decimals are accepted; zero, negative and non-numeric values and future dates are rejected with a clear message.
-- **Readable dark UI**: Material 3 with 16sp primary body text. Text and status colours meet WCAG AA contrast (4.5:1) on the app surfaces, including the white label on the primary button (about 5:1).
+- **Light and dark themes**: follows the phone setting by default, or pick Light or Dark with the button on the Home screen (the choice is remembered). Material 3 with 16sp primary body text. In both themes text and status colours meet WCAG AA contrast (4.5:1) on the app surfaces, and the white label on the primary button is about 5:1.
 
 ## Tech stack
 
@@ -42,13 +47,14 @@ Built with Kotlin, Jetpack Compose, Room and Hilt. Log a trip or a fuel fill-up,
 app/src/main/java/com/triplog/
 ├── data/
 │   ├── local/        # Room: entities, DAOs, database, converters, migrations
+│   ├── settings/     # Remembered theme choice
 │   └── repository/   # TripRepository, FuelExpenseRepository
 ├── di/               # Hilt module
 ├── domain/model/     # Trip, FuelExpense, TripPurpose
 ├── ui/
 │   ├── home/  logtrip/  expenses/  trips/  summary/   # Screens + ViewModels
 │   ├── navigation/   # NavGraph
-│   ├── theme/        # Colours, typography, theme
+│   ├── theme/        # Light and dark colours, typography, theme mode
 │   └── Components.kt, Pickers.kt, Dialogs.kt, ExportShare.kt, FilterBar.kt   # Shared composables
 └── util/             # Formatters, number parsing, list filters, monthly summary, CSV export, receipt image shrinking
 ```
