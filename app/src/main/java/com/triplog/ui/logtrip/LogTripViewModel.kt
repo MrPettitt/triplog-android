@@ -7,6 +7,7 @@ import com.triplog.R
 import com.triplog.data.repository.TripRepository
 import com.triplog.domain.model.Trip
 import com.triplog.domain.model.TripPurpose
+import com.triplog.util.parsePositiveDecimal
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -45,10 +46,14 @@ class LogTripViewModel @Inject constructor(
 
     fun saveTrip() {
         val state = _uiState.value
-        val distance = state.distanceKm.toDoubleOrNull()
+        val distance = parsePositiveDecimal(state.distanceKm)
 
-        if (state.fromLocation.isBlank() || state.toLocation.isBlank() || distance == null) {
+        if (state.fromLocation.isBlank() || state.toLocation.isBlank() || state.distanceKm.isBlank()) {
             _uiState.update { it.copy(errorMessageRes = R.string.error_required_fields) }
+            return
+        }
+        if (distance == null) {
+            _uiState.update { it.copy(errorMessageRes = R.string.error_invalid_distance) }
             return
         }
 

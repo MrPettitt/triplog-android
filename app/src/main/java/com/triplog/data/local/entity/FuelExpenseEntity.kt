@@ -1,5 +1,6 @@
 package com.triplog.data.local.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.triplog.domain.model.FuelExpense
@@ -10,6 +11,8 @@ import java.time.LocalDateTime
 data class FuelExpenseEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
+    @ColumnInfo(defaultValue = "")
+    val clientId: String,
     val date: LocalDate,
     val litres: Double,
     val amountRands: Double,
@@ -22,6 +25,7 @@ data class FuelExpenseEntity(
 ) {
     fun toDomain(): FuelExpense = FuelExpense(
         id = id,
+        clientId = clientId,
         date = date,
         litres = litres,
         amountRands = amountRands,
@@ -36,6 +40,7 @@ data class FuelExpenseEntity(
     companion object {
         fun fromDomain(expense: FuelExpense): FuelExpenseEntity = FuelExpenseEntity(
             id = expense.id,
+            clientId = expense.clientId,
             date = expense.date,
             litres = expense.litres,
             amountRands = expense.amountRands,

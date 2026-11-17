@@ -16,8 +16,8 @@ Built with Kotlin, Jetpack Compose, Room, Hilt and WorkManager. Log a trip or a 
 - **Trip logging**: start and end location, distance, purpose, date and notes.
 - **Fuel expenses**: litres, amount (ZAR), odometer, station and a receipt photo.
 - **Offline first**: everything is stored in Room (SQLite) first, so nothing is lost without a connection.
-- **Automatic sync**: a `ConnectivityObserver` triggers a `SyncWorker` when the network returns, plus a 15-minute periodic sync. Records show a clear Pending or Synced status.
-- **Receipt uploads**: photos are taken with the device camera app and uploaded as multipart alongside the expense.
+- **Automatic sync**: a sync is requested when you save a record and whenever the network returns, plus a 15-minute periodic sync. Requests are de-duplicated into a single worker. Records show a clear Pending or Synced status, and the home banner says so when no backend is configured.
+- **Receipt uploads**: photos are taken with the device camera app (no camera permission needed), shrunk to 1600 px on the long side, and uploaded as multipart. An expense only turns Synced once its receipt is uploaded; a failed upload is retried without creating the expense again.
 - **Readable dark UI**: Material 3 with 16sp primary body text. Text and status colours meet WCAG AA contrast (4.5:1) on the app surfaces, including the white label on the primary button (about 5:1).
 
 ## Tech stack
@@ -95,6 +95,14 @@ GET   /api/v1/fuel-expenses
 ```
 
 Request and response shapes are in `data/remote/dto/Dtos.kt`.
+
+### Retries and duplicates
+
+Every trip and expense gets a random `client_id` when it is created on the device. It is sent in the request body and as an `Idempotency-Key` header on every attempt, so the server can ignore a repeat of a request it already handled (for example when the response was lost). Servers should return the original record for a repeated key.
+
+Responses in the 2xx range count as success. `408`, `429` and `5xx` responses and network errors are retried with backoff. Other `4xx` responses are treated as rejected: the record stays Pending and is tried again on the next sync.
+
+Until `API_BASE_URL` is changed from the placeholder, sync is skipped and the app says so.
 
 ## Releasing
 

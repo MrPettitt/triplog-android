@@ -76,6 +76,7 @@ fun HomeScreen(
             SyncBanner(
                 isOnline = isOnline,
                 pending = state.pendingSyncCount,
+                syncConfigured = state.syncConfigured,
                 modifier = Modifier.padding(horizontal = 20.dp)
             )
             Spacer(Modifier.height(20.dp))
@@ -183,10 +184,16 @@ private fun Metric(label: String, value: String) {
 }
 
 @Composable
-private fun SyncBanner(isOnline: Boolean, pending: Int, modifier: Modifier = Modifier) {
-    val color = if (isOnline) GreenSync else Amber400
+private fun SyncBanner(
+    isOnline: Boolean,
+    pending: Int,
+    syncConfigured: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val color = if (isOnline && syncConfigured) GreenSync else Amber400
     val resources = LocalContext.current.resources
     val text = when {
+        !syncConfigured -> stringResource(R.string.sync_not_configured)
         !isOnline -> resources.getQuantityString(R.plurals.sync_offline, pending, pending)
         pending == 0 -> stringResource(R.string.sync_all_synced)
         else -> resources.getQuantityString(R.plurals.sync_syncing, pending, pending)

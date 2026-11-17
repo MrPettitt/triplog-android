@@ -25,6 +25,9 @@ interface FuelExpenseDao {
     @Update
     suspend fun updateExpense(expense: FuelExpenseEntity)
 
+    @Query("UPDATE fuel_expenses SET remoteId = :remoteId WHERE id = :localId")
+    suspend fun setRemoteId(localId: Long, remoteId: String)
+
     @Query("UPDATE fuel_expenses SET isSynced = 1, remoteId = :remoteId WHERE id = :localId")
     suspend fun markAsSynced(localId: Long, remoteId: String)
 

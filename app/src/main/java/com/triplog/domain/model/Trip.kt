@@ -3,9 +3,11 @@ package com.triplog.domain.model
 import androidx.annotation.StringRes
 import com.triplog.R
 import java.time.LocalDateTime
+import java.util.UUID
 
 data class Trip(
     val id: Long = 0,
+    val clientId: String = UUID.randomUUID().toString(),
     val fromLocation: String,
     val toLocation: String,
     val dateTime: LocalDateTime,

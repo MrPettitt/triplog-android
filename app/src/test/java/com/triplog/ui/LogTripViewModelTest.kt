@@ -4,6 +4,7 @@ import com.triplog.R
 import com.triplog.data.repository.TripRepository
 import com.triplog.domain.model.TripPurpose
 import com.triplog.testutil.FakeApiService
+import com.triplog.testutil.FakeSyncScheduler
 import com.triplog.testutil.FakeTripDao
 import com.triplog.testutil.MainDispatcherRule
 import com.triplog.ui.logtrip.LogTripViewModel
@@ -20,7 +21,7 @@ class LogTripViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val dao = FakeTripDao()
-    private val viewModel = LogTripViewModel(TripRepository(dao, FakeApiService()))
+    private val viewModel = LogTripViewModel(TripRepository(dao, FakeApiService(), FakeSyncScheduler()))
 
     private fun fillValidForm() {
         viewModel.onFromLocationChange("  Head Office ")
@@ -63,13 +64,13 @@ class LogTripViewModelTest {
     }
 
     @Test
-    fun saveTrip_withNonNumericDistance_showsError() {
+    fun saveTrip_withNonNumericDistance_showsInvalidNumberError() {
         fillValidForm()
         viewModel.onDistanceChange("abc")
 
         viewModel.saveTrip()
 
-        assertEquals(R.string.error_required_fields, viewModel.uiState.value.errorMessageRes)
+        assertEquals(R.string.error_invalid_distance, viewModel.uiState.value.errorMessageRes)
         assertTrue(dao.trips.value.isEmpty())
     }
 
@@ -95,5 +96,37 @@ class LogTripViewModelTest {
         assertEquals("", state.distanceKm)
         assertEquals(TripPurpose.CLIENT_VISIT, state.purpose)
         assertFalse(state.saveSuccess)
+    }
+
+    @Test
+    fun saveTrip_acceptsCommaAsDecimalSeparator() {
+        fillValidForm()
+        viewModel.onDistanceChange("12,5")
+
+        viewModel.saveTrip()
+
+        assertEquals(12.5, dao.trips.value.single().distanceKm, 0.0)
+    }
+
+    @Test
+    fun saveTrip_rejectsZeroAndNegativeDistance() {
+        fillValidForm()
+
+        for (bad in listOf("0", "-4", "0,0")) {
+            viewModel.onDistanceChange(bad)
+            viewModel.saveTrip()
+            assertEquals(R.string.error_invalid_distance, viewModel.uiState.value.errorMessageRes)
+        }
+        assertTrue(dao.trips.value.isEmpty())
+    }
+
+    @Test
+    fun saveTrip_withBlankDistance_asksForRequiredFields() {
+        fillValidForm()
+        viewModel.onDistanceChange("")
+
+        viewModel.saveTrip()
+
+        assertEquals(R.string.error_required_fields, viewModel.uiState.value.errorMessageRes)
     }
 }

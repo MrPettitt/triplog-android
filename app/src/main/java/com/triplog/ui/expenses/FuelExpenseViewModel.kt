@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.triplog.R
 import com.triplog.data.repository.FuelExpenseRepository
 import com.triplog.domain.model.FuelExpense
+import com.triplog.util.parseNonNegativeInt
+import com.triplog.util.parsePositiveDecimal
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -42,16 +44,23 @@ class FuelExpenseViewModel @Inject constructor(
     fun onOdometerChange(value: String) = _uiState.update { it.copy(odometerKm = value, errorMessageRes = null) }
     fun onFuelStationChange(value: String) = _uiState.update { it.copy(fuelStation = value, errorMessageRes = null) }
     fun onDateChange(value: LocalDate) = _uiState.update { it.copy(date = value, errorMessageRes = null) }
+    fun onCameraUnavailable() = _uiState.update { it.copy(errorMessageRes = R.string.error_camera_unavailable) }
     fun onReceiptCaptured(path: String) = _uiState.update { it.copy(receiptImagePath = path, errorMessageRes = null) }
 
     fun saveExpense() {
         val state = _uiState.value
-        val litres = state.litres.toDoubleOrNull()
-        val amount = state.amountRands.toDoubleOrNull()
-        val odometer = state.odometerKm.toIntOrNull()
+        val litres = parsePositiveDecimal(state.litres)
+        val amount = parsePositiveDecimal(state.amountRands)
+        val odometer = parseNonNegativeInt(state.odometerKm)
 
-        if (litres == null || amount == null || odometer == null || state.fuelStation.isBlank()) {
+        if (state.litres.isBlank() || state.amountRands.isBlank() ||
+            state.odometerKm.isBlank() || state.fuelStation.isBlank()
+        ) {
             _uiState.update { it.copy(errorMessageRes = R.string.error_required_fields) }
+            return
+        }
+        if (litres == null || amount == null || odometer == null) {
+            _uiState.update { it.copy(errorMessageRes = R.string.error_invalid_expense_numbers) }
             return
         }
 

@@ -1,7 +1,7 @@
 package com.triplog.ui.expenses
 
+import android.content.ActivityNotFoundException
 import android.content.Context
-import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,11 +25,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import com.triplog.util.ReceiptImage
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.triplog.R
 import com.triplog.ui.FieldLabel
 import com.triplog.ui.PrimaryButton
@@ -47,13 +51,27 @@ fun FuelExpenseScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    var tempImageFile by remember { mutableStateOf<File?>(null) }
+    val scope = rememberCoroutineScope()
+
+    // Saved so a rotation while the camera app is open does not lose the capture target.
+    var pendingPhotoPath by rememberSaveable { mutableStateOf<String?>(null) }
 
     val cameraLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.TakePicture()
     ) { success ->
-        if (success) {
-            tempImageFile?.let { file -> viewModel.onReceiptCaptured(file.absolutePath) }
+        val path = pendingPhotoPath
+        pendingPhotoPath = null
+        if (path != null) {
+            if (success) {
+                scope.launch {
+                    // Phone photos are several MB; shrink before storing and uploading.
+                    withContext(Dispatchers.IO) { ReceiptImage.downscale(File(path)) }
+                    viewModel.onReceiptCaptured(path)
+                }
+            } else {
+                // Cancelled: do not leave an empty file behind.
+                File(path).delete()
+            }
         }
     }
 
@@ -64,18 +82,14 @@ fun FuelExpenseScreen(
             "${context.packageName}.fileprovider",
             imageFile
         )
-        tempImageFile = imageFile
-        cameraLauncher.launch(uri)
-    }
-
-    fun hasCameraPermission(): Boolean =
-        ContextCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA) ==
-            PackageManager.PERMISSION_GRANTED
-
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) launchCamera()
+        pendingPhotoPath = imageFile.absolutePath
+        try {
+            cameraLauncher.launch(uri)
+        } catch (e: ActivityNotFoundException) {
+            pendingPhotoPath = null
+            imageFile.delete()
+            viewModel.onCameraUnavailable()
+        }
     }
 
     LaunchedEffect(state.saveSuccess) {
@@ -185,11 +199,7 @@ fun FuelExpenseScreen(
                                 RoundedCornerShape(16.dp)
                             )
                             .clickable {
-                                if (hasCameraPermission()) {
-                                    launchCamera()
-                                } else {
-                                    permissionLauncher.launch(android.Manifest.permission.CAMERA)
-                                }
+                                launchCamera()
                             }
                             .padding(vertical = 24.dp),
                         contentAlignment = Alignment.Center

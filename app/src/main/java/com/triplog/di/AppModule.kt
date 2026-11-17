@@ -5,10 +5,12 @@ import androidx.room.Room
 import androidx.work.WorkManager
 import com.squareup.moshi.Moshi
 import com.triplog.BuildConfig
+import com.triplog.data.local.ALL_MIGRATIONS
 import com.triplog.data.local.AppDatabase
 import com.triplog.data.local.dao.FuelExpenseDao
 import com.triplog.data.local.dao.TripDao
 import com.triplog.data.remote.ApiService
+import com.triplog.sync.SyncConfig
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -31,7 +33,7 @@ object AppModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, AppDatabase.DATABASE_NAME)
-            .fallbackToDestructiveMigration()
+            .addMigrations(*ALL_MIGRATIONS)
             .build()
 
     @Provides
@@ -84,6 +86,10 @@ object AppModule {
     @Singleton
     fun provideApiService(retrofit: Retrofit): ApiService =
         retrofit.create(ApiService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideSyncConfig(): SyncConfig = SyncConfig(BuildConfig.API_BASE_URL)
 
     // --- WorkManager ---
 
