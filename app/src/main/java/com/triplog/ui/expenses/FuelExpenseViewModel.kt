@@ -109,7 +109,6 @@ class FuelExpenseViewModel @Inject constructor(
                 odometerKm = odometer,
                 fuelStation = state.fuelStation.trim(),
                 receiptImagePath = state.receiptImagePath,
-                isSynced = false
             )
             if (state.editingId != null) {
                 fuelExpenseRepository.updateExpense(expense)

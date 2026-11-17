@@ -1,8 +1,8 @@
 # TripLog
 
-**An offline-first Android app for logging work trips and fuel expenses, with automatic background sync.**
+**A simple Android app for logging work trips and fuel expenses. Everything stays on the device.**
 
-Built with Kotlin, Jetpack Compose, Room, Hilt and WorkManager. Log a trip or a fuel fill-up with no signal, and TripLog uploads it the moment the device is back online.
+Built with Kotlin, Jetpack Compose, Room and Hilt. Log a trip or a fuel fill-up, attach a receipt photo, and look it up again later. There is no account, no server and no network access.
 
 <p align="center">
   <img src="docs/screenshots/home.png" width="23%" alt="Home dashboard" />
@@ -15,9 +15,9 @@ Built with Kotlin, Jetpack Compose, Room, Hilt and WorkManager. Log a trip or a 
 
 - **Trip logging**: start and end location, distance, purpose, date, time and notes. Tap a trip to edit or delete it.
 - **Fuel expenses**: date, litres, amount (ZAR), odometer, station and a receipt photo, with a list of past expenses. Tap one to edit or delete it.
-- **Offline first**: everything is stored in Room (SQLite) first, so nothing is lost without a connection.
-- **Automatic sync**: a sync is requested when you save a record and whenever the network returns, plus a 15-minute periodic sync. Requests are de-duplicated into a single worker. Records show a clear Pending or Synced status, and the home banner says so when no backend is configured.
-- **Receipt uploads**: photos are taken with the device camera app (no camera permission needed), shrunk to 1600 px on the long side, and uploaded as multipart. An expense only turns Synced once its receipt is uploaded; a failed upload is retried without creating the expense again.
+- **Local storage**: everything is stored in a Room (SQLite) database on the device. The app has no internet permission.
+- **Receipt photos**: taken with the device camera app (no camera permission needed) and shrunk to 1600 px on the long side. Deleting or replacing a receipt removes the old photo from storage.
+- **Input checks**: comma decimals are accepted; zero, negative and non-numeric values and future dates are rejected with a clear message.
 - **Readable dark UI**: Material 3 with 16sp primary body text. Text and status colours meet WCAG AA contrast (4.5:1) on the app surfaces, including the white label on the primary button (about 5:1).
 
 ## Tech stack
@@ -29,8 +29,6 @@ Built with Kotlin, Jetpack Compose, Room, Hilt and WorkManager. Log a trip or a 
 | Architecture | MVVM + Repository |
 | Local DB | Room |
 | DI | Hilt |
-| Background work | WorkManager |
-| Networking | Retrofit, OkHttp, Moshi |
 | Images | Camera capture via `TakePicture`, Coil 3 |
 | Testing | JUnit 4, kotlinx-coroutines-test, hand-written fakes |
 | CI | GitHub Actions: lint, unit tests, debug build |
@@ -40,18 +38,16 @@ Built with Kotlin, Jetpack Compose, Room, Hilt and WorkManager. Log a trip or a 
 ```
 app/src/main/java/com/triplog/
 ├── data/
-│   ├── local/        # Room: entities, DAOs, database, converters
-│   ├── remote/       # Retrofit ApiService and DTOs
+│   ├── local/        # Room: entities, DAOs, database, converters, migrations
 │   └── repository/   # TripRepository, FuelExpenseRepository
-├── di/               # Hilt modules
+├── di/               # Hilt module
 ├── domain/model/     # Trip, FuelExpense, TripPurpose
 ├── ui/
 │   ├── home/  logtrip/  expenses/  trips/   # Screens + ViewModels
 │   ├── navigation/   # NavGraph
 │   ├── theme/        # Colours, typography, theme
-│   └── Components.kt # Shared composables
-├── util/             # ConnectivityObserver, formatters
-└── worker/           # SyncWorker
+│   └── Components.kt, Pickers.kt, Dialogs.kt   # Shared composables
+└── util/             # Formatters, number parsing, receipt image shrinking
 ```
 
 ## Getting started
@@ -74,59 +70,14 @@ Or open the folder in Android Studio and press **Run**. Android Studio creates `
 
 The same commands run on every push and pull request through GitHub Actions.
 
-### Configure the backend (optional)
+## Data and backup
 
-The app works fully offline. To enable sync, point it at your API. Any one of these works, checked in this order:
-
-1. A Gradle property: `./gradlew assembleDebug -PapiBaseUrl=https://api.example.org/api/v1/`
-2. A line in `local.properties` (git-ignored): `apiBaseUrl=https://api.example.org/api/v1/`
-3. The `API_BASE_URL` environment variable.
-
-Debug builds can use a different server with `apiBaseUrlDebug` (or `API_BASE_URL_DEBUG`), for example `apiBaseUrlDebug=http://10.0.2.2:8080/api/v1/` for a server running on your computer while using the emulator. Debug builds allow plain `http://`; release builds do not. A trailing slash is added if missing, and the build fails early if the value is not an http(s) URL.
-
-To add authentication, attach your token in the OkHttp interceptor in `di/AppModule.kt`.
-
-## Backend API contract
-
-```
-POST    /api/v1/trips
-PUT     /api/v1/trips/{id}
-DELETE  /api/v1/trips/{id}
-GET     /api/v1/trips
-POST    /api/v1/fuel-expenses
-PUT     /api/v1/fuel-expenses/{id}
-DELETE  /api/v1/fuel-expenses/{id}
-POST    /api/v1/fuel-expenses/{id}/receipt   (multipart)
-GET     /api/v1/fuel-expenses
-```
-
-Request and response shapes are in `data/remote/dto/Dtos.kt`.
-
-### Retries and duplicates
-
-Every trip and expense gets a random `client_id` when it is created on the device. It is sent in the request body and as an `Idempotency-Key` header on every attempt, so the server can ignore a repeat of a request it already handled (for example when the response was lost). Servers should return the original record for a repeated key.
-
-Responses in the 2xx range count as success. `408`, `429` and `5xx` responses and network errors are retried with backoff. Other `4xx` responses are treated as rejected: the record stays Pending and is tried again on the next sync.
-
-Until `API_BASE_URL` is changed from the placeholder, sync is skipped and the app says so.
-
-### Edits and deletes
-
-Editing a record that is already on the server sends a `PUT` with the same body as the create request. Deleting it sends a `DELETE`. A `404` or `410` on delete counts as success. On the device a deleted record disappears immediately and is removed for good once the server confirms. A record that never reached the server is simply discarded.
-
-A record is only marked Synced if it was not edited again while the upload was running, so a late edit is never lost.
-
-### Backup
-
-The trip database and receipt photos are included in Android cloud backup and device-to-device transfer (see `res/xml/data_extraction_rules.xml`). Nothing else is. Until the app can download records from the server, this backup is the only way to get your data back on a new phone.
+The trip database and receipt photos are included in Android cloud backup and device-to-device transfer (see `res/xml/data_extraction_rules.xml`). Nothing else is. The database schema is exported to `app/schemas/` and upgrades from every earlier version are covered by migrations in `data/local/Migrations.kt`, so existing trips and expenses are kept.
 
 ## Roadmap
 
-- [ ] Employee authentication (JWT / OAuth)
-- [ ] Employer web dashboard
-- [ ] Automatic distance via Google Maps
-- [ ] PDF / CSV expense report export
-- [ ] Sync status notifications
+- [ ] CSV export of trips and expenses
+- [ ] Search and filters on the trip and fuel lists
 
 ## License
 

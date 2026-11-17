@@ -34,7 +34,6 @@ import com.triplog.R
 import com.triplog.data.repository.FuelExpenseRepository
 import com.triplog.domain.model.FuelExpense
 import com.triplog.ui.SurfaceCard
-import com.triplog.ui.SyncStatusChip
 import com.triplog.ui.TripLogTopBar
 import com.triplog.ui.theme.Brand500
 import com.triplog.ui.theme.Surface900
@@ -149,8 +148,6 @@ private fun ExpenseCard(expense: FuelExpense, onClick: () -> Unit) {
                 maxLines = 1,
                 modifier = Modifier.weight(1f, fill = false)
             )
-            Spacer(Modifier.padding(horizontal = 6.dp))
-            SyncStatusChip(isSynced = expense.isSynced)
         }
         Spacer(Modifier.height(6.dp))
         Text(

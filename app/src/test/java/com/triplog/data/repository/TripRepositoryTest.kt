@@ -1,161 +1,100 @@
 package com.triplog.data.repository
 
-import com.triplog.data.remote.dto.ApiResponse
 import com.triplog.domain.model.Trip
 import com.triplog.domain.model.TripPurpose
-import com.triplog.sync.SyncResult
-import com.triplog.testutil.FakeApiService
-import com.triplog.testutil.FakeSyncScheduler
 import com.triplog.testutil.FakeTripDao
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import retrofit2.Response
-import java.io.IOException
 import java.time.LocalDateTime
 
 class TripRepositoryTest {
 
     private val dao = FakeTripDao()
-    private val api = FakeApiService()
-    private val scheduler = FakeSyncScheduler()
-    private val repository = TripRepository(dao, api, scheduler)
+    private val repository = TripRepository(dao)
 
-    private fun trip(from: String = "A") = Trip(
-        fromLocation = from,
-        toLocation = "B",
-        dateTime = LocalDateTime.of(2026, 1, 1, 8, 0),
-        distanceKm = 12.5,
-        purpose = TripPurpose.MEETING,
-        notes = "n"
-    )
+    private fun trip(from: String = "A", at: LocalDateTime = LocalDateTime.of(2026, 1, 1, 8, 0), km: Double = 10.0) =
+        Trip(
+            fromLocation = from,
+            toLocation = "B",
+            dateTime = at,
+            distanceKm = km,
+            purpose = TripPurpose.MEETING,
+            notes = "n"
+        )
 
     @Test
-    fun saveTrip_storesUnsyncedTripAndRequestsSync() = runTest {
-        val id = repository.saveTrip(trip())
+    fun saveTrip_storesItAndReturnsTheId() = runTest {
+        val id = repository.saveTrip(trip("Head Office"))
 
-        val stored = dao.trips.value.single()
-        assertEquals(id, stored.id)
-        assertFalse(stored.isSynced)
-        assertEquals(1, scheduler.requests)
+        val stored = repository.getTrip(id)!!
+        assertEquals("Head Office", stored.fromLocation)
+        assertEquals(TripPurpose.MEETING, stored.purpose)
     }
 
     @Test
-    fun sync_marksTripSyncedAndSendsExpectedRequest() = runTest {
-        repository.saveTrip(trip(from = "Head Office"))
+    fun allTrips_areNewestFirst() = runTest {
+        repository.saveTrip(trip("old", at = LocalDateTime.of(2026, 1, 1, 8, 0)))
+        repository.saveTrip(trip("new", at = LocalDateTime.of(2026, 3, 1, 8, 0)))
+        repository.saveTrip(trip("middle", at = LocalDateTime.of(2026, 2, 1, 8, 0)))
 
-        val result = repository.syncPendingTrips()
-
-        assertEquals(SyncResult(synced = 1), result)
-        val stored = dao.trips.value.single()
-        assertTrue(stored.isSynced)
-        assertEquals("remote-trip", stored.remoteId)
-
-        val request = api.tripRequests.single()
-        assertEquals("Head Office", request.fromLocation)
-        assertEquals("MEETING", request.purpose)
-        assertEquals("2026-01-01T08:00:00", request.dateTime)
-        assertEquals(12.5, request.distanceKm, 0.0)
+        assertEquals(listOf("new", "middle", "old"), repository.allTrips.first().map { it.fromLocation })
     }
 
     @Test
-    fun sync_sendsTheSameClientIdAsIdempotencyKeyOnEveryAttempt() = runTest {
-        api.createTripBehaviour = { throw IOException("offline") }
+    fun totals_followTheStoredTrips() = runTest {
+        assertEquals(0, repository.totalTripCount.first())
+        assertNull(repository.totalDistanceKm.first())
+
+        repository.saveTrip(trip(km = 12.5))
+        repository.saveTrip(trip(km = 7.5))
+
+        assertEquals(2, repository.totalTripCount.first())
+        assertEquals(20.0, repository.totalDistanceKm.first()!!, 0.0)
+    }
+
+    @Test
+    fun updateTrip_changesFieldsButKeepsIdAndCreationTime() = runTest {
+        val id = repository.saveTrip(trip("Before"))
+        val original = repository.getTrip(id)!!
+
+        repository.updateTrip(original.copy(fromLocation = "After", distanceKm = 99.5, createdAt = LocalDateTime.MAX))
+
+        val edited = repository.getTrip(id)!!
+        assertEquals("After", edited.fromLocation)
+        assertEquals(99.5, edited.distanceKm, 0.0)
+        assertEquals(original.createdAt, edited.createdAt)
+        assertEquals(1, dao.trips.value.size)
+    }
+
+    @Test
+    fun updateTrip_ofAMissingTrip_doesNothing() = runTest {
+        repository.updateTrip(trip().copy(id = 42))
+
+        assertTrue(dao.trips.value.isEmpty())
+    }
+
+    @Test
+    fun deleteTrip_removesItFromListsAndTotals() = runTest {
+        val id = repository.saveTrip(trip(km = 10.0))
+        repository.saveTrip(trip("keep", km = 5.0))
+
+        repository.deleteTrip(id)
+
+        assertNull(repository.getTrip(id))
+        assertEquals(listOf("keep"), repository.allTrips.first().map { it.fromLocation })
+        assertEquals(5.0, repository.totalDistanceKm.first()!!, 0.0)
+    }
+
+    @Test
+    fun deleteTrip_ofAMissingTrip_isHarmless() = runTest {
         repository.saveTrip(trip())
 
-        repository.syncPendingTrips()
-        repository.syncPendingTrips()
+        repository.deleteTrip(999)
 
-        val clientId = dao.trips.value.single().clientId
-        assertTrue(clientId.isNotBlank())
-        assertEquals(listOf(clientId, clientId), api.idempotencyKeys)
-        assertEquals(clientId, api.tripRequests.first().clientId)
-    }
-
-    @Test
-    fun sync_serverError_isRetryableAndLeavesTripPending() = runTest {
-        api.createTripBehaviour = { FakeApiService.serverError() }
-        repository.saveTrip(trip())
-
-        val result = repository.syncPendingTrips()
-
-        assertEquals(SyncResult(retryable = 1), result)
-        assertTrue(result.shouldRetry)
-        assertFalse(dao.trips.value.single().isSynced)
-    }
-
-    @Test
-    fun sync_clientError_isRejectedNotRetried() = runTest {
-        api.createTripBehaviour = { FakeApiService.httpError(422) }
-        repository.saveTrip(trip())
-
-        val result = repository.syncPendingTrips()
-
-        assertEquals(SyncResult(rejected = 1), result)
-        assertFalse(result.shouldRetry)
-        assertFalse(dao.trips.value.single().isSynced)
-    }
-
-    @Test
-    fun sync_tooManyRequests_isRetryable() = runTest {
-        api.createTripBehaviour = { FakeApiService.httpError(429) }
-        repository.saveTrip(trip())
-
-        assertTrue(repository.syncPendingTrips().shouldRetry)
-    }
-
-    @Test
-    fun sync_networkException_isRetryableAndLeavesTripPending() = runTest {
-        api.createTripBehaviour = { throw IOException("offline") }
-        repository.saveTrip(trip())
-
-        val result = repository.syncPendingTrips()
-
-        assertEquals(SyncResult(retryable = 1), result)
-        assertFalse(dao.trips.value.single().isSynced)
-    }
-
-    @Test
-    fun sync_successWithoutRemoteId_isRejectedAndStaysPending() = runTest {
-        api.createTripBehaviour = { Response.success(ApiResponse(true, null, null)) }
-        repository.saveTrip(trip())
-
-        val result = repository.syncPendingTrips()
-
-        assertEquals(SyncResult(rejected = 1), result)
-        assertFalse(dao.trips.value.single().isSynced)
-    }
-
-    @Test
-    fun sync_continuesAfterOneTripFails() = runTest {
-        var calls = 0
-        api.createTripBehaviour = {
-            calls++
-            if (calls == 1) throw IOException("flaky")
-            else Response.success(ApiResponse(true, FakeApiService.tripDto("ok"), null))
-        }
-        repository.saveTrip(trip(from = "first"))
-        repository.saveTrip(trip(from = "second"))
-
-        val result = repository.syncPendingTrips()
-
-        assertEquals(SyncResult(synced = 1, retryable = 1), result)
-        val byFrom = dao.trips.value.associateBy { it.fromLocation }
-        assertFalse(byFrom.getValue("first").isSynced)
-        assertTrue(byFrom.getValue("second").isSynced)
-    }
-
-    @Test
-    fun sync_skipsAlreadySyncedTrips() = runTest {
-        repository.saveTrip(trip())
-        repository.syncPendingTrips()
-        api.tripRequests.clear()
-
-        val result = repository.syncPendingTrips()
-
-        assertEquals(SyncResult(), result)
-        assertTrue(api.tripRequests.isEmpty())
+        assertEquals(1, dao.trips.value.size)
     }
 }

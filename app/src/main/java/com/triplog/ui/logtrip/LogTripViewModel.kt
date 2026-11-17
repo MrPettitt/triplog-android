@@ -114,7 +114,6 @@ class LogTripViewModel @Inject constructor(
                 distanceKm = distance,
                 purpose = state.purpose,
                 notes = state.notes.trim(),
-                isSynced = false // SyncWorker uploads it later
             )
             if (state.editingId != null) {
                 tripRepository.updateTrip(trip)

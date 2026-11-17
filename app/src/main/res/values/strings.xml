@@ -9,19 +9,6 @@
     <string name="nav_trips">Trips</string>
     <string name="action_back">Back</string>
 
-    <!-- Sync status -->
-    <string name="status_synced">Synced</string>
-    <string name="status_pending">Pending</string>
-    <plurals name="sync_offline">
-        <item quantity="one">Offline: %d item waiting to sync</item>
-        <item quantity="other">Offline: %d items waiting to sync</item>
-    </plurals>
-    <string name="sync_all_synced">All data synced</string>
-    <plurals name="sync_syncing">
-        <item quantity="one">Syncing %d item...</item>
-        <item quantity="other">Syncing %d items...</item>
-    </plurals>
-
     <!-- Home -->
     <string name="greeting_morning">Good morning</string>
     <string name="greeting_afternoon">Good afternoon</string>
@@ -39,7 +26,7 @@
 
     <!-- Log trip -->
     <string name="log_trip_title">Log trip</string>
-    <string name="log_trip_subtitle">Saved on this device, synced when online</string>
+    <string name="log_trip_subtitle">Saved on this device</string>
     <string name="field_start_location">Start location</string>
     <string name="field_start_location_hint">e.g. Head Office, 15 Main St</string>
     <string name="field_end_location">End location</string>
@@ -88,20 +75,19 @@
     <string name="error_invalid_distance">Distance must be a number greater than zero.</string>
     <string name="error_invalid_expense_numbers">Litres and amount must be greater than zero, and the odometer must be a whole number.</string>
     <string name="error_camera_unavailable">No camera app was found on this device.</string>
-    <string name="sync_not_configured">Sync is not set up yet. Items are saved on this device.</string>
 
     <!-- Edit and delete -->
     <string name="edit_trip_title">Edit trip</string>
-    <string name="edit_trip_subtitle">Changes sync the next time you are online</string>
+    <string name="edit_trip_subtitle">Update the details of this trip</string>
     <string name="edit_expense_title">Edit fuel expense</string>
     <string name="action_save_changes">Save changes</string>
     <string name="action_delete">Delete</string>
     <string name="action_cancel">Cancel</string>
     <string name="action_ok">OK</string>
     <string name="delete_trip_title">Delete this trip?</string>
-    <string name="delete_trip_message">It will be removed from this device and, once you are online, from the server. This cannot be undone.</string>
+    <string name="delete_trip_message">This trip will be removed from this device. This cannot be undone.</string>
     <string name="delete_expense_title">Delete this expense?</string>
-    <string name="delete_expense_message">It will be removed from this device and, once you are online, from the server. This cannot be undone.</string>
+    <string name="delete_expense_message">This expense and its receipt photo will be removed from this device. This cannot be undone.</string>
     <string name="receipt_tap_to_retake">Tap the photo to retake it</string>
 
     <!-- Dates and times -->

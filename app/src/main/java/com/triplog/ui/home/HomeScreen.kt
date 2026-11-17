@@ -27,7 +27,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.triplog.R
 import com.triplog.ui.TripCard
 import com.triplog.ui.theme.*
-import com.triplog.util.NetworkStatus
 import com.triplog.util.formatKm
 import com.triplog.util.formatRands
 import java.time.LocalTime
@@ -48,7 +47,6 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val isOnline = state.networkStatus == NetworkStatus.Available
 
     LazyColumn(
         modifier = Modifier
@@ -70,18 +68,9 @@ fun HomeScreen(
                 fuelSpent = state.totalFuelSpentRands,
                 modifier = Modifier.padding(horizontal = 20.dp)
             )
-            Spacer(Modifier.height(14.dp))
-        }
-
-        item {
-            SyncBanner(
-                isOnline = isOnline,
-                pending = state.pendingSyncCount,
-                syncConfigured = state.syncConfigured,
-                modifier = Modifier.padding(horizontal = 20.dp)
-            )
             Spacer(Modifier.height(20.dp))
         }
+
 
         item {
             Row(
@@ -181,41 +170,6 @@ private fun Metric(label: String, value: String) {
     Column {
         Text(label, style = MaterialTheme.typography.labelMedium, color = Color.White.copy(alpha = 0.8f))
         Text(value, style = MaterialTheme.typography.titleLarge, color = Color.White)
-    }
-}
-
-@Composable
-private fun SyncBanner(
-    isOnline: Boolean,
-    pending: Int,
-    syncConfigured: Boolean,
-    modifier: Modifier = Modifier
-) {
-    val color = if (isOnline && syncConfigured) GreenSync else Amber400
-    val resources = LocalContext.current.resources
-    val text = when {
-        !syncConfigured -> stringResource(R.string.sync_not_configured)
-        !isOnline -> resources.getQuantityString(R.plurals.sync_offline, pending, pending)
-        pending == 0 -> stringResource(R.string.sync_all_synced)
-        else -> resources.getQuantityString(R.plurals.sync_syncing, pending, pending)
-    }
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(color.copy(alpha = 0.10f))
-            .border(1.dp, color.copy(alpha = 0.30f), RoundedCornerShape(16.dp))
-            .padding(horizontal = 16.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            Modifier
-                .size(8.dp)
-                .clip(CircleShape)
-                .background(color)
-        )
-        Spacer(Modifier.width(12.dp))
-        Text(text, color = color, style = MaterialTheme.typography.titleSmall)
     }
 }
 
