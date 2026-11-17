@@ -1,7 +1,9 @@
 package com.triplog.ui.logtrip
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.triplog.R
 import com.triplog.data.repository.TripRepository
 import com.triplog.domain.model.Trip
 import com.triplog.domain.model.TripPurpose
@@ -23,7 +25,7 @@ data class LogTripUiState(
     val dateTime: LocalDateTime = LocalDateTime.now(),
     val isSaving: Boolean = false,
     val saveSuccess: Boolean = false,
-    val errorMessage: String? = null
+    @StringRes val errorMessageRes: Int? = null
 )
 
 @HiltViewModel
@@ -34,24 +36,24 @@ class LogTripViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(LogTripUiState())
     val uiState: StateFlow<LogTripUiState> = _uiState.asStateFlow()
 
-    fun onFromLocationChange(value: String) = _uiState.update { it.copy(fromLocation = value) }
-    fun onToLocationChange(value: String) = _uiState.update { it.copy(toLocation = value) }
-    fun onDistanceChange(value: String) = _uiState.update { it.copy(distanceKm = value) }
-    fun onPurposeChange(value: TripPurpose) = _uiState.update { it.copy(purpose = value) }
-    fun onNotesChange(value: String) = _uiState.update { it.copy(notes = value) }
-    fun onDateTimeChange(value: LocalDateTime) = _uiState.update { it.copy(dateTime = value) }
+    fun onFromLocationChange(value: String) = _uiState.update { it.copy(fromLocation = value, errorMessageRes = null) }
+    fun onToLocationChange(value: String) = _uiState.update { it.copy(toLocation = value, errorMessageRes = null) }
+    fun onDistanceChange(value: String) = _uiState.update { it.copy(distanceKm = value, errorMessageRes = null) }
+    fun onPurposeChange(value: TripPurpose) = _uiState.update { it.copy(purpose = value, errorMessageRes = null) }
+    fun onNotesChange(value: String) = _uiState.update { it.copy(notes = value, errorMessageRes = null) }
+    fun onDateTimeChange(value: LocalDateTime) = _uiState.update { it.copy(dateTime = value, errorMessageRes = null) }
 
     fun saveTrip() {
         val state = _uiState.value
         val distance = state.distanceKm.toDoubleOrNull()
 
         if (state.fromLocation.isBlank() || state.toLocation.isBlank() || distance == null) {
-            _uiState.update { it.copy(errorMessage = "Please fill in all required fields.") }
+            _uiState.update { it.copy(errorMessageRes = R.string.error_required_fields) }
             return
         }
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isSaving = true, errorMessage = null) }
+            _uiState.update { it.copy(isSaving = true, errorMessageRes = null) }
             val trip = Trip(
                 fromLocation = state.fromLocation.trim(),
                 toLocation = state.toLocation.trim(),
@@ -70,5 +72,5 @@ class LogTripViewModel @Inject constructor(
         _uiState.value = LogTripUiState()
     }
 
-    fun clearError() = _uiState.update { it.copy(errorMessage = null) }
+    fun clearError() = _uiState.update { it.copy(errorMessageRes = null) }
 }

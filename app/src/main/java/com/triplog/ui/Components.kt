@@ -14,9 +14,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.triplog.R
 import com.triplog.domain.model.Trip
 import com.triplog.ui.theme.*
 import com.triplog.util.formatKm
@@ -24,7 +26,7 @@ import java.time.format.DateTimeFormatter
 
 private val CardShape = RoundedCornerShape(20.dp)
 private val FieldShape = RoundedCornerShape(14.dp)
-private val TripDateFormat = DateTimeFormatter.ofPattern("d MMM, HH:mm")
+private val TripDateFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM, HH:mm")
 
 @Composable
 fun TripLogTopBar(title: String, subtitle: String? = null, onBack: (() -> Unit)? = null) {
@@ -42,7 +44,7 @@ fun TripLogTopBar(title: String, subtitle: String? = null, onBack: (() -> Unit)?
                     .clip(CircleShape)
                     .background(Surface700)
             ) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = TextPrimary)
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back), tint = TextPrimary)
             }
             Spacer(Modifier.width(14.dp))
         }
@@ -58,7 +60,7 @@ fun TripLogTopBar(title: String, subtitle: String? = null, onBack: (() -> Unit)?
 @Composable
 fun SyncStatusChip(isSynced: Boolean) {
     val color = if (isSynced) GreenSync else Amber400
-    val label = if (isSynced) "Synced" else "Pending"
+    val label = stringResource(if (isSynced) R.string.status_synced else R.string.status_pending)
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(50))
@@ -94,7 +96,7 @@ fun TripCard(trip: Trip) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = trip.purpose.label,
+                text = stringResource(trip.purpose.labelRes),
                 style = MaterialTheme.typography.labelMedium,
                 color = Brand400,
                 modifier = Modifier
@@ -126,7 +128,7 @@ fun TripCard(trip: Trip) {
                 color = TextSecondary
             )
             Text(
-                "${formatKm(trip.distanceKm)} km",
+                "${formatKm(trip.distanceKm)} ${stringResource(R.string.unit_km)}",
                 style = MaterialTheme.typography.titleMedium,
                 color = TextPrimary
             )

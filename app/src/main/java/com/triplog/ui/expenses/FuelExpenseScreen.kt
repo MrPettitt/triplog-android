@@ -1,6 +1,7 @@
 package com.triplog.ui.expenses
 
 import android.content.Context
+import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -20,15 +21,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil.compose.AsyncImage
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.isGranted
-import com.google.accompanist.permissions.rememberPermissionState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.compose.AsyncImage
+import com.triplog.R
 import com.triplog.ui.FieldLabel
 import com.triplog.ui.PrimaryButton
 import com.triplog.ui.TripLogTextField
@@ -38,16 +39,14 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
-@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun FuelExpenseScreen(
     onNavigateBack: () -> Unit,
     viewModel: FuelExpenseViewModel = hiltViewModel()
 ) {
-    val state by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    val cameraPermission = rememberPermissionState(android.Manifest.permission.CAMERA)
     var tempImageFile by remember { mutableStateOf<File?>(null) }
 
     val cameraLauncher = rememberLauncherForActivityResult(
@@ -56,6 +55,27 @@ fun FuelExpenseScreen(
         if (success) {
             tempImageFile?.let { file -> viewModel.onReceiptCaptured(file.absolutePath) }
         }
+    }
+
+    fun launchCamera() {
+        val imageFile = createImageFile(context)
+        val uri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            imageFile
+        )
+        tempImageFile = imageFile
+        cameraLauncher.launch(uri)
+    }
+
+    fun hasCameraPermission(): Boolean =
+        ContextCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA) ==
+            PackageManager.PERMISSION_GRANTED
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) launchCamera()
     }
 
     LaunchedEffect(state.saveSuccess) {
@@ -71,7 +91,7 @@ fun FuelExpenseScreen(
             .background(Surface900)
             .verticalScroll(rememberScrollState())
     ) {
-        TripLogTopBar(title = "Fuel expense", subtitle = "Add the receipt photo for your records", onBack = onNavigateBack)
+        TripLogTopBar(title = stringResource(R.string.fuel_title), subtitle = stringResource(R.string.fuel_subtitle), onBack = onNavigateBack)
 
         Column(
             modifier = Modifier
@@ -83,16 +103,16 @@ fun FuelExpenseScreen(
                 TripLogTextField(
                     value = state.litres,
                     onValueChange = viewModel::onLitresChange,
-                    label = "Litres",
-                    placeholder = "0.00",
+                    label = stringResource(R.string.field_litres),
+                    placeholder = stringResource(R.string.field_amount_hint),
                     keyboardType = KeyboardType.Decimal,
                     modifier = Modifier.weight(1f)
                 )
                 TripLogTextField(
                     value = state.amountRands,
                     onValueChange = viewModel::onAmountChange,
-                    label = "Amount (R)",
-                    placeholder = "0.00",
+                    label = stringResource(R.string.field_amount),
+                    placeholder = stringResource(R.string.field_amount_hint),
                     keyboardType = KeyboardType.Decimal,
                     modifier = Modifier.weight(1f)
                 )
@@ -101,21 +121,21 @@ fun FuelExpenseScreen(
             TripLogTextField(
                 value = state.odometerKm,
                 onValueChange = viewModel::onOdometerChange,
-                label = "Odometer (km)",
-                placeholder = "e.g. 84320",
+                label = stringResource(R.string.field_odometer),
+                placeholder = stringResource(R.string.field_odometer_hint),
                 keyboardType = KeyboardType.Number
             )
 
             TripLogTextField(
                 value = state.fuelStation,
                 onValueChange = viewModel::onFuelStationChange,
-                label = "Fuel station",
-                placeholder = "e.g. Engen Sandton"
+                label = stringResource(R.string.field_fuel_station),
+                placeholder = stringResource(R.string.field_fuel_station_hint)
             )
 
             // Receipt capture zone
             Column {
-                FieldLabel("Receipt photo")
+                FieldLabel(stringResource(R.string.field_receipt))
 
                 if (state.receiptImagePath != null) {
                     // Show captured receipt thumbnail
@@ -128,7 +148,7 @@ fun FuelExpenseScreen(
                     ) {
                         AsyncImage(
                             model = File(state.receiptImagePath!!),
-                            contentDescription = "Receipt",
+                            contentDescription = stringResource(R.string.receipt_description),
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()
                         )
@@ -148,7 +168,7 @@ fun FuelExpenseScreen(
                                     modifier = Modifier.size(12.dp)
                                 )
                                 Spacer(Modifier.width(4.dp))
-                                Text("Captured", color = Surface900, style = MaterialTheme.typography.labelSmall)
+                                Text(stringResource(R.string.receipt_captured), color = Surface900, style = MaterialTheme.typography.labelSmall)
                             }
                         }
                     }
@@ -165,17 +185,10 @@ fun FuelExpenseScreen(
                                 RoundedCornerShape(16.dp)
                             )
                             .clickable {
-                                if (cameraPermission.status.isGranted) {
-                                    val imageFile = createImageFile(context)
-                                    val uri = FileProvider.getUriForFile(
-                                        context,
-                                        "${context.packageName}.fileprovider",
-                                        imageFile
-                                    )
-                                    tempImageFile = imageFile
-                                    cameraLauncher.launch(uri)
+                                if (hasCameraPermission()) {
+                                    launchCamera()
                                 } else {
-                                    cameraPermission.launchPermissionRequest()
+                                    permissionLauncher.launch(android.Manifest.permission.CAMERA)
                                 }
                             }
                             .padding(vertical = 24.dp),
@@ -189,21 +202,21 @@ fun FuelExpenseScreen(
                                 modifier = Modifier.size(30.dp)
                             )
                             Spacer(Modifier.height(8.dp))
-                            Text("Tap to photograph receipt", color = Brand400, style = MaterialTheme.typography.titleSmall)
-                            Text("Opens your camera", color = TextTertiary, style = MaterialTheme.typography.bodySmall)
+                            Text(stringResource(R.string.receipt_tap_to_photograph), color = Brand400, style = MaterialTheme.typography.titleSmall)
+                            Text(stringResource(R.string.receipt_opens_camera), color = TextTertiary, style = MaterialTheme.typography.bodySmall)
                         }
                     }
                 }
             }
 
-            state.errorMessage?.let { error ->
-                Text(error, color = RedError, style = MaterialTheme.typography.bodyMedium)
+            state.errorMessageRes?.let { errorRes ->
+                Text(stringResource(errorRes), color = RedError, style = MaterialTheme.typography.bodyMedium)
             }
 
             Spacer(Modifier.height(4.dp))
 
             PrimaryButton(
-                text = "Save expense",
+                text = stringResource(R.string.action_save_expense),
                 onClick = viewModel::saveExpense,
                 isLoading = state.isSaving
             )

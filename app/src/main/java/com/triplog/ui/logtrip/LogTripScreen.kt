@@ -8,9 +8,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.triplog.R
 import com.triplog.domain.model.TripPurpose
 import com.triplog.ui.FieldLabel
 import com.triplog.ui.PrimaryButton
@@ -25,7 +28,7 @@ fun LogTripScreen(
     onNavigateBack: () -> Unit,
     viewModel: LogTripViewModel = hiltViewModel()
 ) {
-    val state by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(state.saveSuccess) {
         if (state.saveSuccess) {
@@ -40,7 +43,7 @@ fun LogTripScreen(
             .background(Surface900)
             .verticalScroll(rememberScrollState())
     ) {
-        TripLogTopBar(title = "Log trip", subtitle = "Saved on this device, synced when online", onBack = onNavigateBack)
+        TripLogTopBar(title = stringResource(R.string.log_trip_title), subtitle = stringResource(R.string.log_trip_subtitle), onBack = onNavigateBack)
 
         Column(
             modifier = Modifier
@@ -51,41 +54,41 @@ fun LogTripScreen(
             TripLogTextField(
                 value = state.fromLocation,
                 onValueChange = viewModel::onFromLocationChange,
-                label = "Start location",
-                placeholder = "e.g. Head Office, 15 Main St"
+                label = stringResource(R.string.field_start_location),
+                placeholder = stringResource(R.string.field_start_location_hint)
             )
 
             TripLogTextField(
                 value = state.toLocation,
                 onValueChange = viewModel::onToLocationChange,
-                label = "End location",
-                placeholder = "e.g. Client Site, 84 Park Ave"
+                label = stringResource(R.string.field_end_location),
+                placeholder = stringResource(R.string.field_end_location_hint)
             )
 
             TripLogTextField(
                 value = state.distanceKm,
                 onValueChange = viewModel::onDistanceChange,
-                label = "Distance (km)",
-                placeholder = "0.0",
+                label = stringResource(R.string.field_distance),
+                placeholder = stringResource(R.string.field_distance_hint),
                 keyboardType = KeyboardType.Decimal
             )
 
             // Purpose dropdown
             Column {
-                FieldLabel("Purpose")
+                FieldLabel(stringResource(R.string.field_purpose))
                 var expanded by remember { mutableStateOf(false) }
                 ExposedDropdownMenuBox(
                     expanded = expanded,
                     onExpandedChange = { expanded = !expanded }
                 ) {
                     OutlinedTextField(
-                        value = state.purpose.label,
+                        value = stringResource(state.purpose.labelRes),
                         onValueChange = {},
                         readOnly = true,
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .menuAnchor(),
+                            .menuAnchor(MenuAnchorType.PrimaryNotEditable),
                         textStyle = MaterialTheme.typography.bodyLarge,
                         shape = RoundedCornerShape(14.dp),
                         colors = fieldColors()
@@ -97,7 +100,7 @@ fun LogTripScreen(
                     ) {
                         TripPurpose.entries.forEach { purpose ->
                             DropdownMenuItem(
-                                text = { Text(purpose.label, color = TextPrimary, style = MaterialTheme.typography.bodyLarge) },
+                                text = { Text(stringResource(purpose.labelRes), color = TextPrimary, style = MaterialTheme.typography.bodyLarge) },
                                 onClick = {
                                     viewModel.onPurposeChange(purpose)
                                     expanded = false
@@ -111,20 +114,20 @@ fun LogTripScreen(
             TripLogTextField(
                 value = state.notes,
                 onValueChange = viewModel::onNotesChange,
-                label = "Notes (optional)",
-                placeholder = "Anything worth remembering",
+                label = stringResource(R.string.field_notes),
+                placeholder = stringResource(R.string.field_notes_hint),
                 singleLine = false,
                 maxLines = 4
             )
 
-            state.errorMessage?.let { error ->
-                Text(error, color = RedError, style = MaterialTheme.typography.bodyMedium)
+            state.errorMessageRes?.let { errorRes ->
+                Text(stringResource(errorRes), color = RedError, style = MaterialTheme.typography.bodyMedium)
             }
 
             Spacer(Modifier.height(4.dp))
 
             PrimaryButton(
-                text = "Save trip",
+                text = stringResource(R.string.action_save_trip),
                 onClick = viewModel::saveTrip,
                 isLoading = state.isSaving
             )

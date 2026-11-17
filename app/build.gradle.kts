@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,6 +7,16 @@ plugins {
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
 }
+
+// Release signing: read from keystore.properties (git-ignored) or environment variables.
+// With neither present the release build is left unsigned, so a plain clone still builds.
+val keystoreProperties = Properties().apply {
+    val file = rootProject.file("keystore.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
+}
+
+fun signingValue(property: String, environment: String): String? =
+    keystoreProperties.getProperty(property) ?: System.getenv(environment)
 
 android {
     namespace = "com.triplog"
@@ -23,9 +35,23 @@ android {
         buildConfigField("String", "API_BASE_URL", "\"https://your-api-url.com/api/v1/\"")
     }
 
+    signingConfigs {
+        val storeFilePath = signingValue("storeFile", "KEYSTORE_FILE")
+        if (storeFilePath != null) {
+            create("release") {
+                storeFile = rootProject.file(storeFilePath)
+                storePassword = signingValue("storePassword", "KEYSTORE_PASSWORD")
+                keyAlias = signingValue("keyAlias", "KEY_ALIAS")
+                keyPassword = signingValue("keyPassword", "KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
+            isShrinkResources = true
+            signingConfig = signingConfigs.findByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -52,6 +78,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.activity.compose)
 
     // Compose
@@ -81,7 +108,7 @@ dependencies {
     implementation(libs.retrofit.moshi)
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
-    implementation(libs.moshi.kotlin)
+    implementation(libs.moshi)
     ksp(libs.moshi.codegen)
 
     // WorkManager
@@ -96,6 +123,8 @@ dependencies {
     // Image loading
     implementation(libs.coil)
 
-    // Permissions
-    implementation(libs.accompanist.permissions)
+
+    // Unit tests
+    testImplementation(libs.junit)
+    testImplementation(libs.coroutines.test)
 }

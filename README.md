@@ -17,8 +17,8 @@ Built with Kotlin, Jetpack Compose, Room, Hilt and WorkManager. Log a trip or a 
 - **Fuel expenses**: litres, amount (ZAR), odometer, station and a receipt photo.
 - **Offline first**: everything is stored in Room (SQLite) first, so nothing is lost without a connection.
 - **Automatic sync**: a `ConnectivityObserver` triggers a `SyncWorker` when the network returns, plus a 15-minute periodic sync. Records show a clear Pending or Synced status.
-- **Receipt uploads**: photos are captured in-app and uploaded as multipart alongside the expense.
-- **Readable dark UI**: Material 3, 16sp body text, high-contrast colours that pass WCAG AA.
+- **Receipt uploads**: photos are taken with the device camera app and uploaded as multipart alongside the expense.
+- **Readable dark UI**: Material 3 with 16sp primary body text. Text and status colours meet WCAG AA contrast (4.5:1) on the app surfaces, including the white label on the primary button (about 5:1).
 
 ## Tech stack
 
@@ -31,7 +31,9 @@ Built with Kotlin, Jetpack Compose, Room, Hilt and WorkManager. Log a trip or a 
 | DI | Hilt |
 | Background work | WorkManager |
 | Networking | Retrofit, OkHttp, Moshi |
-| Images | Camera capture via `TakePicture`, Coil |
+| Images | Camera capture via `TakePicture`, Coil 3 |
+| Testing | JUnit 4, kotlinx-coroutines-test, hand-written fakes |
+| CI | GitHub Actions: lint, unit tests, debug build |
 
 ## Project structure
 
@@ -54,7 +56,7 @@ app/src/main/java/com/triplog/
 
 ## Getting started
 
-**Requirements:** Android Studio Ladybug or newer, JDK 17 or 21, Android device or emulator on API 26+.
+**Requirements:** Android Studio Ladybug or newer, JDK 17 or 21 (Gradle 8.10 does not run on newer JDKs), Android device or emulator on API 26+.
 
 ```bash
 git clone https://github.com/MrPettitt/triplog-android.git
@@ -63,6 +65,14 @@ cd triplog-android
 ```
 
 Or open the folder in Android Studio and press **Run**. Android Studio creates `local.properties` with your SDK path automatically.
+
+### Run the checks
+
+```bash
+./gradlew lintDebug testDebugUnitTest
+```
+
+The same commands run on every push and pull request through GitHub Actions.
 
 ### Configure the backend (optional)
 
@@ -85,6 +95,10 @@ GET   /api/v1/fuel-expenses
 ```
 
 Request and response shapes are in `data/remote/dto/Dtos.kt`.
+
+## Releasing
+
+See [docs/RELEASING.md](docs/RELEASING.md) for signing setup and how tagged releases publish a signed APK and AAB.
 
 ## Roadmap
 

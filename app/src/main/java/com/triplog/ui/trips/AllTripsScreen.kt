@@ -8,10 +8,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.triplog.R
 import com.triplog.data.repository.TripRepository
 import com.triplog.domain.model.Trip
 import com.triplog.ui.TripCard
@@ -37,7 +41,7 @@ fun AllTripsScreen(
     onNavigateBack: () -> Unit,
     viewModel: AllTripsViewModel = hiltViewModel()
 ) {
-    val trips by viewModel.trips.collectAsState()
+    val trips by viewModel.trips.collectAsStateWithLifecycle()
 
     Column(
         modifier = Modifier
@@ -45,8 +49,8 @@ fun AllTripsScreen(
             .background(Surface900)
     ) {
         TripLogTopBar(
-            title = "All trips",
-            subtitle = if (trips.isEmpty()) null else "${trips.size} trip${if (trips.size != 1) "s" else ""} logged",
+            title = stringResource(R.string.all_trips_title),
+            subtitle = if (trips.isEmpty()) null else LocalContext.current.resources.getQuantityString(R.plurals.all_trips_subtitle, trips.size, trips.size),
             onBack = onNavigateBack
         )
 
@@ -55,7 +59,7 @@ fun AllTripsScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                Text("No trips logged yet.", color = TextSecondary, style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(R.string.all_trips_empty), color = TextSecondary, style = MaterialTheme.typography.bodyLarge)
             }
         } else {
             LazyColumn(
