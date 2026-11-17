@@ -11,6 +11,7 @@ interface ApiService {
     // --- Trips ---
     @POST("trips")
     suspend fun createTrip(
+        @Header("Idempotency-Key") idempotencyKey: String,
         @Body request: CreateTripRequest
     ): Response<ApiResponse<TripDto>>
 
@@ -20,6 +21,7 @@ interface ApiService {
     // --- Fuel Expenses ---
     @POST("fuel-expenses")
     suspend fun createExpense(
+        @Header("Idempotency-Key") idempotencyKey: String,
         @Body request: CreateExpenseRequest
     ): Response<ApiResponse<FuelExpenseDto>>
 

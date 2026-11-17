@@ -18,6 +18,11 @@ val keystoreProperties = Properties().apply {
 fun signingValue(property: String, environment: String): String? =
     keystoreProperties.getProperty(property) ?: System.getenv(environment)
 
+ksp {
+    // Export Room schemas so database migrations can be reviewed and tested.
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 android {
     namespace = "com.triplog"
     compileSdk = 35
@@ -26,8 +31,8 @@ android {
         applicationId = "com.triplog"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -114,14 +119,10 @@ dependencies {
     // WorkManager
     implementation(libs.work.runtime.ktx)
 
-    // CameraX
-    implementation(libs.camerax.core)
-    implementation(libs.camerax.camera2)
-    implementation(libs.camerax.lifecycle)
-    implementation(libs.camerax.view)
 
     // Image loading
     implementation(libs.coil)
+    implementation(libs.exifinterface)
 
 
     // Unit tests

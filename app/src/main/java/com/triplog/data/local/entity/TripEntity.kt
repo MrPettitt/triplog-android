@@ -1,5 +1,6 @@
 package com.triplog.data.local.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.triplog.domain.model.Trip
@@ -10,6 +11,8 @@ import java.time.LocalDateTime
 data class TripEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
+    @ColumnInfo(defaultValue = "")
+    val clientId: String,
     val fromLocation: String,
     val toLocation: String,
     val dateTime: LocalDateTime,
@@ -22,6 +25,7 @@ data class TripEntity(
 ) {
     fun toDomain(): Trip = Trip(
         id = id,
+        clientId = clientId,
         fromLocation = fromLocation,
         toLocation = toLocation,
         dateTime = dateTime,
@@ -36,6 +40,7 @@ data class TripEntity(
     companion object {
         fun fromDomain(trip: Trip): TripEntity = TripEntity(
             id = trip.id,
+            clientId = trip.clientId,
             fromLocation = trip.fromLocation,
             toLocation = trip.toLocation,
             dateTime = trip.dateTime,

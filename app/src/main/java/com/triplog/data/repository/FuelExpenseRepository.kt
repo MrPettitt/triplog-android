@@ -5,21 +5,33 @@ import com.triplog.data.local.entity.FuelExpenseEntity
 import com.triplog.data.remote.ApiService
 import com.triplog.data.remote.dto.CreateExpenseRequest
 import com.triplog.domain.model.FuelExpense
+import com.triplog.sync.SyncOutcome
+import com.triplog.sync.SyncResult
+import com.triplog.sync.SyncScheduler
+import com.triplog.sync.outcomeForHttpCode
+import com.triplog.sync.toResult
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
+import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class FuelExpenseRepository @Inject constructor(
     private val expenseDao: FuelExpenseDao,
-    private val apiService: ApiService
+    private val apiService: ApiService,
+    private val syncScheduler: SyncScheduler
 ) {
+    private val syncMutex = Mutex()
+
     val allExpenses: Flow<List<FuelExpense>> = expenseDao.getAllExpenses().map { entities ->
         entities.map { it.toDomain() }
     }
@@ -28,50 +40,72 @@ class FuelExpenseRepository @Inject constructor(
     val pendingSyncCount: Flow<Int> = expenseDao.getPendingSyncCount()
 
     suspend fun saveExpense(expense: FuelExpense): Long {
-        val entity = FuelExpenseEntity.fromDomain(expense)
-        return expenseDao.insertExpense(entity)
+        val id = expenseDao.insertExpense(FuelExpenseEntity.fromDomain(expense))
+        syncScheduler.requestSync()
+        return id
     }
 
-    suspend fun syncPendingExpenses() {
-        val unsynced = expenseDao.getUnsyncedExpenses()
-
-        for (entity in unsynced) {
-            try {
-                val request = CreateExpenseRequest(
-                    date = entity.date.toString(),
-                    litres = entity.litres,
-                    amountRands = entity.amountRands,
-                    odometerKm = entity.odometerKm,
-                    fuelStation = entity.fuelStation
-                )
-                val response = apiService.createExpense(request)
-                if (response.isSuccessful) {
-                    val remoteId = response.body()?.data?.id ?: continue
-                    expenseDao.markAsSynced(entity.id, remoteId)
-
-                    // Upload receipt image if present
-                    entity.receiptImagePath?.let { path ->
-                        uploadReceipt(remoteId, path)
-                    }
-                }
-            } catch (e: Exception) {
-                // Network error - will retry on next sync
-            }
+    /**
+     * Uploads every unsynced expense. An expense only counts as synced once both the record and
+     * its receipt photo are on the server. If the record was created but the receipt failed, the
+     * remote id is kept and only the receipt is retried on the next pass.
+     */
+    suspend fun syncPendingExpenses(): SyncResult = syncMutex.withLock {
+        var result = SyncResult()
+        for (entity in expenseDao.getUnsyncedExpenses()) {
+            result += syncExpense(entity).toResult()
         }
+        result
     }
 
-    private suspend fun uploadReceipt(remoteId: String, imagePath: String) {
-        try {
-            val file = File(imagePath)
-            if (!file.exists()) return
-
-            val requestFile = file.asRequestBody("image/jpeg".toMediaTypeOrNull())
-            val body = MultipartBody.Part.createFormData("receipt", file.name, requestFile)
-            val expenseIdPart = remoteId.toRequestBody("text/plain".toMediaTypeOrNull())
-
-            apiService.uploadReceipt(remoteId, body, expenseIdPart)
+    private suspend fun syncExpense(entity: FuelExpenseEntity): SyncOutcome {
+        return try {
+            syncExpenseUnsafe(entity)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: IOException) {
+            SyncOutcome.Retryable
         } catch (e: Exception) {
-            // Upload failed - receipt will remain local
+            SyncOutcome.Rejected
         }
     }
+
+    private suspend fun syncExpenseUnsafe(entity: FuelExpenseEntity): SyncOutcome {
+        var remoteId = entity.remoteId
+        if (remoteId == null) {
+            val response = apiService.createExpense(entity.clientId, entity.toRequest())
+            val outcome = outcomeForHttpCode(response.code())
+            if (outcome != SyncOutcome.Success) return outcome
+            remoteId = response.body()?.data?.id ?: return SyncOutcome.Rejected
+            expenseDao.setRemoteId(entity.id, remoteId)
+        }
+
+        val receiptOutcome = uploadReceipt(remoteId, entity.receiptImagePath)
+        if (receiptOutcome == SyncOutcome.Success) {
+            expenseDao.markAsSynced(entity.id, remoteId)
+        }
+        return receiptOutcome
+    }
+
+    /** No receipt, or a receipt file that no longer exists, counts as done: there is nothing to send. */
+    private suspend fun uploadReceipt(remoteId: String, imagePath: String?): SyncOutcome {
+        if (imagePath == null) return SyncOutcome.Success
+        val file = File(imagePath)
+        if (!file.exists()) return SyncOutcome.Success
+
+        val requestFile = file.asRequestBody("image/jpeg".toMediaTypeOrNull())
+        val body = MultipartBody.Part.createFormData("receipt", file.name, requestFile)
+        val expenseIdPart = remoteId.toRequestBody("text/plain".toMediaTypeOrNull())
+        val response = apiService.uploadReceipt(remoteId, body, expenseIdPart)
+        return outcomeForHttpCode(response.code())
+    }
+
+    private fun FuelExpenseEntity.toRequest() = CreateExpenseRequest(
+        clientId = clientId,
+        date = date.toString(),
+        litres = litres,
+        amountRands = amountRands,
+        odometerKm = odometerKm,
+        fuelStation = fuelStation
+    )
 }

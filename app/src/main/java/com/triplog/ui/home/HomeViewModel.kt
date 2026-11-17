@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.triplog.data.repository.FuelExpenseRepository
 import com.triplog.data.repository.TripRepository
 import com.triplog.domain.model.Trip
+import com.triplog.sync.SyncConfig
 import com.triplog.util.ConnectivityObserver
 import com.triplog.util.NetworkStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,9 +19,11 @@ data class HomeUiState(
     val totalTrips: Int = 0,
     val totalDistanceKm: Double = 0.0,
     val totalFuelSpentRands: Double = 0.0,
+    /** Trips and fuel expenses that have not finished syncing. */
     val pendingSyncCount: Int = 0,
     val recentTrips: List<Trip> = emptyList(),
-    val networkStatus: NetworkStatus = NetworkStatus.Available
+    val networkStatus: NetworkStatus = NetworkStatus.Available,
+    val syncConfigured: Boolean = true
 )
 
 private const val RECENT_TRIP_LIMIT = 5
@@ -29,7 +32,8 @@ private const val RECENT_TRIP_LIMIT = 5
 class HomeViewModel @Inject constructor(
     tripRepository: TripRepository,
     fuelExpenseRepository: FuelExpenseRepository,
-    connectivityObserver: ConnectivityObserver
+    connectivityObserver: ConnectivityObserver,
+    syncConfig: SyncConfig
 ) : ViewModel() {
 
     private data class Totals(val trips: Int, val distanceKm: Double, val fuelSpentRands: Double)
@@ -42,9 +46,14 @@ class HomeViewModel @Inject constructor(
         Totals(trips, distanceKm ?: 0.0, fuelSpent ?: 0.0)
     }
 
+    private val pending = combine(
+        tripRepository.pendingSyncCount,
+        fuelExpenseRepository.pendingSyncCount
+    ) { tripsPending, expensesPending -> tripsPending + expensesPending }
+
     val uiState: StateFlow<HomeUiState> = combine(
         totals,
-        tripRepository.pendingSyncCount,
+        pending,
         tripRepository.allTrips,
         connectivityObserver.networkStatus
     ) { totals, pending, trips, network ->
@@ -54,11 +63,12 @@ class HomeViewModel @Inject constructor(
             totalFuelSpentRands = totals.fuelSpentRands,
             pendingSyncCount = pending,
             recentTrips = trips.take(RECENT_TRIP_LIMIT),
-            networkStatus = network
+            networkStatus = network,
+            syncConfigured = syncConfig.isConfigured
         )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = HomeUiState()
+        initialValue = HomeUiState(syncConfigured = syncConfig.isConfigured)
     )
 }

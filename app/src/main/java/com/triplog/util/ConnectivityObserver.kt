@@ -5,8 +5,7 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
-import androidx.work.WorkManager
-import com.triplog.worker.SyncWorker
+import com.triplog.sync.SyncScheduler
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -20,17 +19,18 @@ enum class NetworkStatus { Available, Unavailable }
 @Singleton
 class ConnectivityObserver @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val workManager: WorkManager
+    private val syncScheduler: SyncScheduler
 ) {
     private val connectivityManager =
         context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
+    private var syncTriggerRegistered = false
+
+    /** Pure status stream for the UI. Collecting it has no side effects. */
     val networkStatus: Flow<NetworkStatus> = callbackFlow {
         val callback = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
                 trySend(NetworkStatus.Available)
-                // Trigger immediate sync when connection restored
-                workManager.enqueue(SyncWorker.buildOneTimeRequest())
             }
 
             override fun onLost(network: Network) {
@@ -53,6 +53,20 @@ class ConnectivityObserver @Inject constructor(
 
         awaitClose { connectivityManager.unregisterNetworkCallback(callback) }
     }.distinctUntilChanged()
+
+    /**
+     * Requests a sync whenever the device gets a network. Call once from the Application so it
+     * works whether or not any screen is showing. The scheduler de-duplicates the requests.
+     */
+    fun startSyncOnReconnect() {
+        if (syncTriggerRegistered) return
+        syncTriggerRegistered = true
+        connectivityManager.registerDefaultNetworkCallback(object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                syncScheduler.requestSync()
+            }
+        })
+    }
 
     fun isConnected(): Boolean {
         val network = connectivityManager.activeNetwork ?: return false

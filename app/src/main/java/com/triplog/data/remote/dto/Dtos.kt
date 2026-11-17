@@ -17,6 +17,7 @@ data class TripDto(
 
 @JsonClass(generateAdapter = true)
 data class CreateTripRequest(
+    @Json(name = "client_id") val clientId: String,
     @Json(name = "from_location") val fromLocation: String,
     @Json(name = "to_location") val toLocation: String,
     @Json(name = "date_time") val dateTime: String,
@@ -38,6 +39,7 @@ data class FuelExpenseDto(
 
 @JsonClass(generateAdapter = true)
 data class CreateExpenseRequest(
+    @Json(name = "client_id") val clientId: String,
     @Json(name = "date") val date: String,
     @Json(name = "litres") val litres: Double,
     @Json(name = "amount_rands") val amountRands: Double,

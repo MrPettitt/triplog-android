@@ -85,4 +85,8 @@
 
     <!-- Validation -->
     <string name="error_required_fields">Please fill in all required fields.</string>
+    <string name="error_invalid_distance">Distance must be a number greater than zero.</string>
+    <string name="error_invalid_expense_numbers">Litres and amount must be greater than zero, and the odometer must be a whole number.</string>
+    <string name="error_camera_unavailable">No camera app was found on this device.</string>
+    <string name="sync_not_configured">Sync is not set up yet. Items are saved on this device.</string>
 </resources>

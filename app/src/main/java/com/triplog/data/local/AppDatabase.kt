@@ -10,8 +10,8 @@ import com.triplog.data.local.entity.TripEntity
 
 @Database(
     entities = [TripEntity::class, FuelExpenseEntity::class],
-    version = 1,
-    exportSchema = false
+    version = 2,
+    exportSchema = true
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {

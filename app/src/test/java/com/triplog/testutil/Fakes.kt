@@ -76,6 +76,10 @@ class FakeFuelExpenseDao : FuelExpenseDao {
         expenses.value = expenses.value.map { if (it.id == expense.id) expense else it }
     }
 
+    override suspend fun setRemoteId(localId: Long, remoteId: String) {
+        expenses.value = expenses.value.map { if (it.id == localId) it.copy(remoteId = remoteId) else it }
+    }
+
     override suspend fun markAsSynced(localId: Long, remoteId: String) {
         expenses.value = expenses.value.map {
             if (it.id == localId) it.copy(isSynced = true, remoteId = remoteId) else it
@@ -84,6 +88,15 @@ class FakeFuelExpenseDao : FuelExpenseDao {
 
     override suspend fun deleteExpense(expense: FuelExpenseEntity) {
         expenses.value = expenses.value.filterNot { it.id == expense.id }
+    }
+}
+
+class FakeSyncScheduler : com.triplog.sync.SyncScheduler {
+    var requests = 0
+        private set
+
+    override fun requestSync() {
+        requests++
     }
 }
 
@@ -96,11 +109,21 @@ class FakeApiService : ApiService {
         Response.success(ApiResponse(true, expenseDto("remote-expense"), null))
     }
 
+    var receiptBehaviour: suspend (String) -> Response<ApiResponse<FuelExpenseDto>> = { id ->
+        Response.success(ApiResponse(true, expenseDto(id), null))
+    }
+
     val tripRequests = mutableListOf<CreateTripRequest>()
     val expenseRequests = mutableListOf<CreateExpenseRequest>()
     val receiptUploads = mutableListOf<String>()
 
-    override suspend fun createTrip(request: CreateTripRequest): Response<ApiResponse<TripDto>> {
+    val idempotencyKeys = mutableListOf<String>()
+
+    override suspend fun createTrip(
+        idempotencyKey: String,
+        request: CreateTripRequest
+    ): Response<ApiResponse<TripDto>> {
+        idempotencyKeys += idempotencyKey
         tripRequests += request
         return createTripBehaviour(request)
     }
@@ -108,7 +131,11 @@ class FakeApiService : ApiService {
     override suspend fun getTrips(): Response<ApiResponse<List<TripDto>>> =
         Response.success(ApiResponse(true, emptyList(), null))
 
-    override suspend fun createExpense(request: CreateExpenseRequest): Response<ApiResponse<FuelExpenseDto>> {
+    override suspend fun createExpense(
+        idempotencyKey: String,
+        request: CreateExpenseRequest
+    ): Response<ApiResponse<FuelExpenseDto>> {
+        idempotencyKeys += idempotencyKey
         expenseRequests += request
         return createExpenseBehaviour(request)
     }
@@ -119,7 +146,7 @@ class FakeApiService : ApiService {
         expenseIdPart: RequestBody
     ): Response<ApiResponse<FuelExpenseDto>> {
         receiptUploads += expenseId
-        return Response.success(ApiResponse(true, expenseDto(expenseId), null))
+        return receiptBehaviour(expenseId)
     }
 
     override suspend fun getExpenses(): Response<ApiResponse<List<FuelExpenseDto>>> =
@@ -135,6 +162,9 @@ class FakeApiService : ApiService {
             id = id, date = "2026-01-01", litres = 10.0, amountRands = 200.0,
             odometerKm = 1000, fuelStation = "Engen", receiptUrl = null
         )
+
+        fun <T> httpError(code: Int): Response<T> =
+            Response.error(code, "".toResponseBody(null))
 
         fun <T> serverError(): Response<T> =
             Response.error(500, "".toResponseBody(null))

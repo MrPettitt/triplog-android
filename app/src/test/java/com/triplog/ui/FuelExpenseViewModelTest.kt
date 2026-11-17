@@ -3,6 +3,7 @@ package com.triplog.ui
 import com.triplog.R
 import com.triplog.data.repository.FuelExpenseRepository
 import com.triplog.testutil.FakeApiService
+import com.triplog.testutil.FakeSyncScheduler
 import com.triplog.testutil.FakeFuelExpenseDao
 import com.triplog.testutil.MainDispatcherRule
 import com.triplog.ui.expenses.FuelExpenseViewModel
@@ -19,7 +20,9 @@ class FuelExpenseViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val dao = FakeFuelExpenseDao()
-    private val viewModel = FuelExpenseViewModel(FuelExpenseRepository(dao, FakeApiService()))
+    private val viewModel = FuelExpenseViewModel(
+        FuelExpenseRepository(dao, FakeApiService(), FakeSyncScheduler())
+    )
 
     private fun fillValidForm() {
         viewModel.onLitresChange("38.2")
@@ -97,5 +100,46 @@ class FuelExpenseViewModelTest {
         val state = viewModel.uiState.value
         assertEquals("", state.litres)
         assertNull(state.receiptImagePath)
+    }
+
+    @Test
+    fun saveExpense_acceptsCommaDecimals() {
+        fillValidForm()
+        viewModel.onLitresChange("38,2")
+        viewModel.onAmountChange("812,40")
+
+        viewModel.saveExpense()
+
+        val stored = dao.expenses.value.single()
+        assertEquals(38.2, stored.litres, 0.0)
+        assertEquals(812.40, stored.amountRands, 0.0)
+    }
+
+    @Test
+    fun saveExpense_rejectsZeroNegativeAndNonNumericValues() {
+        val badInputs = listOf(
+            { viewModel.onLitresChange("0") },
+            { viewModel.onLitresChange("-5") },
+            { viewModel.onAmountChange("abc") },
+            { viewModel.onOdometerChange("12.5") },
+            { viewModel.onOdometerChange("-1") }
+        )
+        for (breakIt in badInputs) {
+            viewModel.resetForm()
+            fillValidForm()
+            breakIt()
+
+            viewModel.saveExpense()
+
+            assertEquals(R.string.error_invalid_expense_numbers, viewModel.uiState.value.errorMessageRes)
+        }
+        assertTrue(dao.expenses.value.isEmpty())
+    }
+
+    @Test
+    fun cameraUnavailable_showsError() {
+        viewModel.onCameraUnavailable()
+
+        assertEquals(R.string.error_camera_unavailable, viewModel.uiState.value.errorMessageRes)
     }
 }
