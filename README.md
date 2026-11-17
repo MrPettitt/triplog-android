@@ -15,6 +15,7 @@ Built with Kotlin, Jetpack Compose, Room and Hilt. Log a trip or a fuel fill-up,
 
 - **Trip logging**: start and end location, distance, purpose, date, time and notes. Tap a trip to edit or delete it.
 - **Fuel expenses**: date, litres, amount (ZAR), odometer, station and a receipt photo, with a list of past expenses. Tap one to edit or delete it.
+- **Search and filters**: the Trips and Fuel screens have a search box and date range chips (all time, this month, last 30 days, this year); trips can also be filtered by purpose. The list, the totals and the CSV export all follow the filter.
 - **CSV export**: the share button on the Trips and Fuel screens exports the list as a CSV file (ISO dates, dot decimals, UTF-8, safe against spreadsheet formulas) and opens the Android share sheet. The app never sends the file anywhere itself.
 - **Local storage**: everything is stored in a Room (SQLite) database on the device. The app has no internet permission.
 - **Receipt photos**: taken with the device camera app (no camera permission needed) and shrunk to 1600 px on the long side. Deleting or replacing a receipt removes the old photo from storage.
@@ -47,8 +48,8 @@ app/src/main/java/com/triplog/
 │   ├── home/  logtrip/  expenses/  trips/   # Screens + ViewModels
 │   ├── navigation/   # NavGraph
 │   ├── theme/        # Colours, typography, theme
-│   └── Components.kt, Pickers.kt, Dialogs.kt, ExportShare.kt   # Shared composables
-└── util/             # Formatters, number parsing, CSV export, receipt image shrinking
+│   └── Components.kt, Pickers.kt, Dialogs.kt, ExportShare.kt, FilterBar.kt   # Shared composables
+└── util/             # Formatters, number parsing, list filters, CSV export, receipt image shrinking
 ```
 
 ## Getting started
@@ -74,10 +75,6 @@ The same commands run on every push and pull request through GitHub Actions.
 ## Data and backup
 
 The trip database and receipt photos are included in Android cloud backup and device-to-device transfer (see `res/xml/data_extraction_rules.xml`). Nothing else is. The database schema is exported to `app/schemas/` and upgrades from every earlier version are covered by migrations in `data/local/Migrations.kt`, so existing trips and expenses are kept.
-
-## Roadmap
-
-- [ ] Search and filters on the trip and fuel lists
 
 ## License
 

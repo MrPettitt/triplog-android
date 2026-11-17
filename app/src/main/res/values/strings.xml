@@ -114,4 +114,18 @@
     <string name="export_expenses">Export fuel expenses as CSV</string>
     <string name="export_chooser_title">Share CSV file</string>
     <string name="export_failed">The file could not be shared.</string>
+
+    <!-- Search and filters -->
+    <string name="search_trips_hint">Search places and notes</string>
+    <string name="search_fuel_hint">Search fuel station</string>
+    <string name="search_clear">Clear search</string>
+    <string name="range_all">All time</string>
+    <string name="range_this_month">This month</string>
+    <string name="range_last_30_days">Last 30 days</string>
+    <string name="range_this_year">This year</string>
+    <string name="filter_any_purpose">Any purpose</string>
+    <string name="filter_no_results">Nothing matches your search or filters.</string>
+    <string name="filter_clear_all">Clear filters</string>
+    <string name="filtered_trips_subtitle">Showing %1$d of %2$d trips</string>
+    <string name="filtered_fuel_subtitle">Showing %1$d of %2$d expenses, %3$s in total</string>
 </resources>
