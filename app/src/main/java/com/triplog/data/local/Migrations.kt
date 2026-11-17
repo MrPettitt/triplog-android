@@ -23,4 +23,20 @@ internal const val RANDOM_UUID_SQL =
         "substr(hex(randomblob(2)), 2) || '-' || substr('89ab', abs(random()) % 4 + 1, 1) || " +
         "substr(hex(randomblob(2)), 2) || '-' || hex(randomblob(6)))"
 
-val ALL_MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2)
+/**
+ * Version 2 to 3: adds a revision counter and a deletion tombstone to both tables, and tracks
+ * whether the receipt photo has been uploaded. Receipts of already synced expenses count as
+ * uploaded; unsynced ones are retried.
+ */
+val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE trips ADD COLUMN revision INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE trips ADD COLUMN isDeleted INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE fuel_expenses ADD COLUMN revision INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE fuel_expenses ADD COLUMN isDeleted INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE fuel_expenses ADD COLUMN receiptUploaded INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("UPDATE fuel_expenses SET receiptUploaded = isSynced")
+    }
+}
+
+val ALL_MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3)

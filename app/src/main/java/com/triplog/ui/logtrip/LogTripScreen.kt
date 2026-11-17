@@ -15,6 +15,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.triplog.R
 import com.triplog.domain.model.TripPurpose
+import com.triplog.ui.ConfirmDeleteDialog
+import com.triplog.ui.DateField
+import com.triplog.ui.TimeField
 import com.triplog.ui.FieldLabel
 import com.triplog.ui.PrimaryButton
 import com.triplog.ui.fieldColors
@@ -37,13 +40,32 @@ fun LogTripScreen(
         }
     }
 
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    if (showDeleteDialog) {
+        ConfirmDeleteDialog(
+            title = stringResource(R.string.delete_trip_title),
+            message = stringResource(R.string.delete_trip_message),
+            onConfirm = {
+                showDeleteDialog = false
+                viewModel.deleteTrip()
+            },
+            onDismiss = { showDeleteDialog = false }
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Surface900)
+            .imePadding()
             .verticalScroll(rememberScrollState())
     ) {
-        TripLogTopBar(title = stringResource(R.string.log_trip_title), subtitle = stringResource(R.string.log_trip_subtitle), onBack = onNavigateBack)
+        TripLogTopBar(
+            title = stringResource(if (state.isEditing) R.string.edit_trip_title else R.string.log_trip_title),
+            subtitle = stringResource(if (state.isEditing) R.string.edit_trip_subtitle else R.string.log_trip_subtitle),
+            onBack = onNavigateBack
+        )
 
         Column(
             modifier = Modifier
@@ -51,6 +73,21 @@ fun LogTripScreen(
                 .padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                DateField(
+                    label = stringResource(R.string.field_date),
+                    date = state.dateTime.toLocalDate(),
+                    onDateChange = viewModel::onDateChange,
+                    modifier = Modifier.weight(1.4f)
+                )
+                TimeField(
+                    label = stringResource(R.string.field_time),
+                    time = state.dateTime.toLocalTime(),
+                    onTimeChange = viewModel::onTimeChange,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
             TripLogTextField(
                 value = state.fromLocation,
                 onValueChange = viewModel::onFromLocationChange,
@@ -127,10 +164,24 @@ fun LogTripScreen(
             Spacer(Modifier.height(4.dp))
 
             PrimaryButton(
-                text = stringResource(R.string.action_save_trip),
+                text = stringResource(if (state.isEditing) R.string.action_save_changes else R.string.action_save_trip),
                 onClick = viewModel::saveTrip,
                 isLoading = state.isSaving
             )
+
+            if (state.isEditing) {
+                TextButton(
+                    onClick = { showDeleteDialog = true },
+                    enabled = !state.isSaving,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        stringResource(R.string.action_delete),
+                        color = RedError,
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                }
+            }
 
             Spacer(Modifier.height(24.dp))
         }

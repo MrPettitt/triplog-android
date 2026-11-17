@@ -89,4 +89,37 @@
     <string name="error_invalid_expense_numbers">Litres and amount must be greater than zero, and the odometer must be a whole number.</string>
     <string name="error_camera_unavailable">No camera app was found on this device.</string>
     <string name="sync_not_configured">Sync is not set up yet. Items are saved on this device.</string>
+
+    <!-- Edit and delete -->
+    <string name="edit_trip_title">Edit trip</string>
+    <string name="edit_trip_subtitle">Changes sync the next time you are online</string>
+    <string name="edit_expense_title">Edit fuel expense</string>
+    <string name="action_save_changes">Save changes</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_ok">OK</string>
+    <string name="delete_trip_title">Delete this trip?</string>
+    <string name="delete_trip_message">It will be removed from this device and, once you are online, from the server. This cannot be undone.</string>
+    <string name="delete_expense_title">Delete this expense?</string>
+    <string name="delete_expense_message">It will be removed from this device and, once you are online, from the server. This cannot be undone.</string>
+    <string name="receipt_tap_to_retake">Tap the photo to retake it</string>
+
+    <!-- Dates and times -->
+    <string name="field_date">Date</string>
+    <string name="field_time">Time</string>
+    <string name="pick_date">Choose a date</string>
+    <string name="pick_time">Choose a time</string>
+    <string name="error_trip_in_future">The trip date and time cannot be in the future.</string>
+    <string name="error_expense_in_future">The expense date cannot be in the future.</string>
+
+    <!-- Fuel list -->
+    <string name="fuel_list_title">Fuel expenses</string>
+    <plurals name="fuel_list_subtitle">
+        <item quantity="one">%1$d expense, %2$s in total</item>
+        <item quantity="other">%1$d expenses, %2$s in total</item>
+    </plurals>
+    <string name="fuel_list_empty">No fuel expenses yet. Tap \"Add expense\" to log your first one.</string>
+    <string name="fuel_list_add">Add expense</string>
+    <string name="fuel_card_litres_odometer">%1$s L at %2$s km</string>
+    <string name="receipt_attached">Receipt attached</string>
 </resources>

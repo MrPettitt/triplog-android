@@ -44,6 +44,7 @@ fun HomeScreen(
     onNavigateToLogTrip: () -> Unit,
     onNavigateToExpenses: () -> Unit,
     onNavigateToAllTrips: () -> Unit,
+    onTripClick: (Long) -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -129,7 +130,7 @@ fun HomeScreen(
         } else {
             items(state.recentTrips, key = { it.id }) { trip ->
                 Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp)) {
-                    TripCard(trip = trip)
+                    TripCard(trip = trip, onClick = { onTripClick(trip.id) })
                 }
             }
         }

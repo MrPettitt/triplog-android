@@ -34,6 +34,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.triplog.R
+import com.triplog.ui.ConfirmDeleteDialog
+import com.triplog.ui.DateField
 import com.triplog.ui.FieldLabel
 import com.triplog.ui.PrimaryButton
 import com.triplog.ui.TripLogTextField
@@ -99,13 +101,32 @@ fun FuelExpenseScreen(
         }
     }
 
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    if (showDeleteDialog) {
+        ConfirmDeleteDialog(
+            title = stringResource(R.string.delete_expense_title),
+            message = stringResource(R.string.delete_expense_message),
+            onConfirm = {
+                showDeleteDialog = false
+                viewModel.deleteExpense()
+            },
+            onDismiss = { showDeleteDialog = false }
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Surface900)
+            .imePadding()
             .verticalScroll(rememberScrollState())
     ) {
-        TripLogTopBar(title = stringResource(R.string.fuel_title), subtitle = stringResource(R.string.fuel_subtitle), onBack = onNavigateBack)
+        TripLogTopBar(
+            title = stringResource(if (state.isEditing) R.string.edit_expense_title else R.string.fuel_title),
+            subtitle = stringResource(R.string.fuel_subtitle),
+            onBack = onNavigateBack
+        )
 
         Column(
             modifier = Modifier
@@ -113,6 +134,12 @@ fun FuelExpenseScreen(
                 .padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
+            DateField(
+                label = stringResource(R.string.field_date),
+                date = state.date,
+                onDateChange = viewModel::onDateChange
+            )
+
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 TripLogTextField(
                     value = state.litres,
@@ -159,6 +186,7 @@ fun FuelExpenseScreen(
                             .height(160.dp)
                             .clip(RoundedCornerShape(16.dp))
                             .border(0.5.dp, GreenSync.copy(0.3f), RoundedCornerShape(16.dp))
+                            .clickable { launchCamera() }
                     ) {
                         AsyncImage(
                             model = File(state.receiptImagePath!!),
@@ -186,6 +214,12 @@ fun FuelExpenseScreen(
                             }
                         }
                     }
+                    Text(
+                        stringResource(R.string.receipt_tap_to_retake),
+                        color = TextTertiary,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 6.dp)
+                    )
                 } else {
                     // Camera capture button
                     Box(
@@ -226,10 +260,24 @@ fun FuelExpenseScreen(
             Spacer(Modifier.height(4.dp))
 
             PrimaryButton(
-                text = stringResource(R.string.action_save_expense),
+                text = stringResource(if (state.isEditing) R.string.action_save_changes else R.string.action_save_expense),
                 onClick = viewModel::saveExpense,
                 isLoading = state.isSaving
             )
+
+            if (state.isEditing) {
+                TextButton(
+                    onClick = { showDeleteDialog = true },
+                    enabled = !state.isSaving,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        stringResource(R.string.action_delete),
+                        color = RedError,
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                }
+            }
 
             Spacer(Modifier.height(24.dp))
         }

@@ -15,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -76,7 +77,9 @@ fun TripLogApp() {
         BottomNavItem(Screen.AllTrips, R.string.nav_trips, Icons.AutoMirrored.Filled.List),
     )
 
-    val showBottomBar = currentRoute in bottomNavItems.map { it.screen.route }
+    // Hide the bar while the keyboard is up so it does not float above the keyboard.
+    val imeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    val showBottomBar = currentRoute in bottomNavItems.map { it.screen.route } && !imeVisible
 
     Scaffold(
         modifier = Modifier

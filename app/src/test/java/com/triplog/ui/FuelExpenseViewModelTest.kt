@@ -1,5 +1,6 @@
 package com.triplog.ui
 
+import androidx.lifecycle.SavedStateHandle
 import com.triplog.R
 import com.triplog.data.repository.FuelExpenseRepository
 import com.triplog.testutil.FakeApiService
@@ -21,7 +22,8 @@ class FuelExpenseViewModelTest {
 
     private val dao = FakeFuelExpenseDao()
     private val viewModel = FuelExpenseViewModel(
-        FuelExpenseRepository(dao, FakeApiService(), FakeSyncScheduler())
+        FuelExpenseRepository(dao, FakeApiService(), FakeSyncScheduler()),
+        SavedStateHandle()
     )
 
     private fun fillValidForm() {

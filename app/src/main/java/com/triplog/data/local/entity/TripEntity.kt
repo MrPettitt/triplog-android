@@ -21,7 +21,13 @@ data class TripEntity(
     val notes: String,
     val isSynced: Boolean,
     val remoteId: String?,
-    val createdAt: LocalDateTime
+    val createdAt: LocalDateTime,
+    /** Bumped on every local change so a finished upload never marks newer edits as synced. */
+    @ColumnInfo(defaultValue = "0")
+    val revision: Int = 0,
+    /** Tombstone: hidden from the UI, removed locally once the server has deleted it. */
+    @ColumnInfo(defaultValue = "0")
+    val isDeleted: Boolean = false
 ) {
     fun toDomain(): Trip = Trip(
         id = id,

@@ -22,6 +22,8 @@ jobs:
     timeout-minutes: 30
     env:
       TAG: ${{ github.event.inputs.tag || github.ref_name }}
+      # Repository variable (Settings, Secrets and variables, Actions, Variables).
+      API_BASE_URL: ${{ vars.API_BASE_URL }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -42,6 +44,10 @@ jobs:
             echo "::error::Secret KEYSTORE_BASE64 is not set. See docs/RELEASING.md."
             exit 1
           fi
+
+      - name: Warn when no API URL is configured
+        if: ${{ vars.API_BASE_URL == '' }}
+        run: echo "::warning::Repository variable API_BASE_URL is not set, so this build ships with the placeholder URL and sync stays off. See docs/RELEASING.md."
 
       - name: Check tag matches versionName
         run: |

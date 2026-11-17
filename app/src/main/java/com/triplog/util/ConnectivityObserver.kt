@@ -42,11 +42,7 @@ class ConnectivityObserver @Inject constructor(
             }
         }
 
-        val request = NetworkRequest.Builder()
-            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-            .build()
-
-        connectivityManager.registerNetworkCallback(request, callback)
+        connectivityManager.registerNetworkCallback(validatedInternetRequest(), callback)
         // Emit initial state
         val initial = if (isConnected()) NetworkStatus.Available else NetworkStatus.Unavailable
         trySend(initial)
@@ -61,16 +57,27 @@ class ConnectivityObserver @Inject constructor(
     fun startSyncOnReconnect() {
         if (syncTriggerRegistered) return
         syncTriggerRegistered = true
-        connectivityManager.registerDefaultNetworkCallback(object : ConnectivityManager.NetworkCallback() {
-            override fun onAvailable(network: Network) {
-                syncScheduler.requestSync()
+        // Only networks the system has verified can reach the internet, so a captive portal or a
+        // Wi-Fi network without a connection does not trigger a pointless sync.
+        connectivityManager.registerNetworkCallback(
+            validatedInternetRequest(),
+            object : ConnectivityManager.NetworkCallback() {
+                override fun onAvailable(network: Network) {
+                    syncScheduler.requestSync()
+                }
             }
-        })
+        )
     }
 
     fun isConnected(): Boolean {
         val network = connectivityManager.activeNetwork ?: return false
         val caps = connectivityManager.getNetworkCapabilities(network) ?: return false
-        return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+            caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
     }
+
+    private fun validatedInternetRequest(): NetworkRequest = NetworkRequest.Builder()
+        .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        .addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+        .build()
 }

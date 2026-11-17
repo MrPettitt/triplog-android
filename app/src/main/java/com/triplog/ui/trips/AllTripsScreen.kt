@@ -39,6 +39,7 @@ class AllTripsViewModel @Inject constructor(tripRepository: TripRepository) : Vi
 @Composable
 fun AllTripsScreen(
     onNavigateBack: () -> Unit,
+    onTripClick: (Long) -> Unit,
     viewModel: AllTripsViewModel = hiltViewModel()
 ) {
     val trips by viewModel.trips.collectAsStateWithLifecycle()
@@ -67,7 +68,7 @@ fun AllTripsScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(trips, key = { it.id }) { trip ->
-                    TripCard(trip = trip)
+                    TripCard(trip = trip, onClick = { onTripClick(trip.id) })
                 }
                 item { Spacer(Modifier.height(16.dp)) }
             }

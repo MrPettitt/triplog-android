@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 11 and older backup rules. Keep in sync with data_extraction_rules.xml. -->
+<full-backup-content>
+    <include domain="database" path="triplog.db" />
+    <include domain="database" path="triplog.db-wal" />
+    <include domain="database" path="triplog.db-shm" />
+    <include domain="external" path="Pictures/" />
+</full-backup-content>

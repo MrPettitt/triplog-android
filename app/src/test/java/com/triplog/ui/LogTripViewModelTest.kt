@@ -1,5 +1,6 @@
 package com.triplog.ui
 
+import androidx.lifecycle.SavedStateHandle
 import com.triplog.R
 import com.triplog.data.repository.TripRepository
 import com.triplog.domain.model.TripPurpose
@@ -21,7 +22,7 @@ class LogTripViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val dao = FakeTripDao()
-    private val viewModel = LogTripViewModel(TripRepository(dao, FakeApiService(), FakeSyncScheduler()))
+    private val viewModel = LogTripViewModel(TripRepository(dao, FakeApiService(), FakeSyncScheduler()), SavedStateHandle())
 
     private fun fillValidForm() {
         viewModel.onFromLocationChange("  Head Office ")
