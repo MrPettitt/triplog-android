@@ -48,6 +48,20 @@ object CsvExport {
         }
     )
 
+    fun monthlySummary(summaries: List<MonthSummary>): String = build(
+        header = listOf("Month", "Trips", "Distance (km)", "Fuel fill-ups", "Litres", "Fuel spend (R)"),
+        rows = summaries.map { summary ->
+            listOf(
+                summary.month.toString(),
+                summary.tripCount.toString(),
+                number(summary.distanceKm, 1),
+                summary.fillUpCount.toString(),
+                number(summary.litres, 2),
+                number(summary.fuelSpendRands, 2)
+            )
+        }
+    )
+
     private fun build(header: List<String>, rows: List<List<String>>): String =
         buildString {
             append(BYTE_ORDER_MARK)

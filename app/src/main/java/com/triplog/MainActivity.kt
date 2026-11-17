@@ -64,6 +64,7 @@ fun TripLogApp() {
         BottomNavItem(Screen.LogTrip, R.string.nav_log_trip, Icons.Default.AddLocation),
         BottomNavItem(Screen.Expenses, R.string.nav_fuel, Icons.Default.LocalGasStation),
         BottomNavItem(Screen.AllTrips, R.string.nav_trips, Icons.AutoMirrored.Filled.List),
+        BottomNavItem(Screen.Summary, R.string.nav_summary, Icons.Default.BarChart),
     )
 
     // Hide the bar while the keyboard is up so it does not float above the keyboard.
