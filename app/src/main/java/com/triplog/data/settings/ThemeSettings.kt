@@ -13,6 +13,7 @@ import javax.inject.Singleton
 interface SettingsStore {
     fun getString(key: String): String?
     fun putString(key: String, value: String)
+    fun remove(key: String)
 }
 
 class SharedPreferencesStore @Inject constructor(
@@ -24,6 +25,10 @@ class SharedPreferencesStore @Inject constructor(
 
     override fun putString(key: String, value: String) {
         prefs.edit().putString(key, value).apply()
+    }
+
+    override fun remove(key: String) {
+        prefs.edit().remove(key).apply()
     }
 }
 
