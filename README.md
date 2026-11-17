@@ -13,8 +13,8 @@ Built with Kotlin, Jetpack Compose, Room, Hilt and WorkManager. Log a trip or a 
 
 ## Features
 
-- **Trip logging**: start and end location, distance, purpose, date and notes.
-- **Fuel expenses**: litres, amount (ZAR), odometer, station and a receipt photo.
+- **Trip logging**: start and end location, distance, purpose, date, time and notes. Tap a trip to edit or delete it.
+- **Fuel expenses**: date, litres, amount (ZAR), odometer, station and a receipt photo, with a list of past expenses. Tap one to edit or delete it.
 - **Offline first**: everything is stored in Room (SQLite) first, so nothing is lost without a connection.
 - **Automatic sync**: a sync is requested when you save a record and whenever the network returns, plus a 15-minute periodic sync. Requests are de-duplicated into a single worker. Records show a clear Pending or Synced status, and the home banner says so when no backend is configured.
 - **Receipt uploads**: photos are taken with the device camera app (no camera permission needed), shrunk to 1600 px on the long side, and uploaded as multipart. An expense only turns Synced once its receipt is uploaded; a failed upload is retried without creating the expense again.
@@ -76,22 +76,28 @@ The same commands run on every push and pull request through GitHub Actions.
 
 ### Configure the backend (optional)
 
-The app works fully offline. To enable sync, set your API URL in `app/build.gradle.kts`:
+The app works fully offline. To enable sync, point it at your API. Any one of these works, checked in this order:
 
-```kotlin
-buildConfigField("String", "API_BASE_URL", "\"https://your-api-url.com/api/v1/\"")
-```
+1. A Gradle property: `./gradlew assembleDebug -PapiBaseUrl=https://api.example.org/api/v1/`
+2. A line in `local.properties` (git-ignored): `apiBaseUrl=https://api.example.org/api/v1/`
+3. The `API_BASE_URL` environment variable (used by the release workflow, see [docs/RELEASING.md](docs/RELEASING.md)).
+
+Debug builds can use a different server with `apiBaseUrlDebug` (or `API_BASE_URL_DEBUG`), for example `apiBaseUrlDebug=http://10.0.2.2:8080/api/v1/` for a server running on your computer while using the emulator. Debug builds allow plain `http://`; release builds do not. A trailing slash is added if missing, and the build fails early if the value is not an http(s) URL.
 
 To add authentication, attach your token in the OkHttp interceptor in `di/AppModule.kt`.
 
 ## Backend API contract
 
 ```
-POST  /api/v1/trips
-GET   /api/v1/trips
-POST  /api/v1/fuel-expenses
-POST  /api/v1/fuel-expenses/{id}/receipt   (multipart)
-GET   /api/v1/fuel-expenses
+POST    /api/v1/trips
+PUT     /api/v1/trips/{id}
+DELETE  /api/v1/trips/{id}
+GET     /api/v1/trips
+POST    /api/v1/fuel-expenses
+PUT     /api/v1/fuel-expenses/{id}
+DELETE  /api/v1/fuel-expenses/{id}
+POST    /api/v1/fuel-expenses/{id}/receipt   (multipart)
+GET     /api/v1/fuel-expenses
 ```
 
 Request and response shapes are in `data/remote/dto/Dtos.kt`.
@@ -103,6 +109,16 @@ Every trip and expense gets a random `client_id` when it is created on the devic
 Responses in the 2xx range count as success. `408`, `429` and `5xx` responses and network errors are retried with backoff. Other `4xx` responses are treated as rejected: the record stays Pending and is tried again on the next sync.
 
 Until `API_BASE_URL` is changed from the placeholder, sync is skipped and the app says so.
+
+### Edits and deletes
+
+Editing a record that is already on the server sends a `PUT` with the same body as the create request. Deleting it sends a `DELETE`. A `404` or `410` on delete counts as success. On the device a deleted record disappears immediately and is removed for good once the server confirms. A record that never reached the server is simply discarded.
+
+A record is only marked Synced if it was not edited again while the upload was running, so a late edit is never lost.
+
+### Backup
+
+The trip database and receipt photos are included in Android cloud backup and device-to-device transfer (see `res/xml/data_extraction_rules.xml`). Nothing else is. Until the app can download records from the server, this backup is the only way to get your data back on a new phone.
 
 ## Releasing
 

@@ -47,3 +47,7 @@ keyPassword=your-key-password
 ```
 
 Then run `./gradlew assembleRelease`. Without signing details the release build is produced unsigned, so a fresh clone still builds.
+
+## Backend URL
+
+Release builds read the backend URL from the `API_BASE_URL` environment variable. In GitHub, add it as a repository **variable** (not a secret) under Settings, Secrets and variables, Actions, Variables. If it is missing the workflow still builds, but warns that the app ships with the placeholder URL and sync stays off. For a local release build, put `apiBaseUrl=https://...` in `local.properties`.
