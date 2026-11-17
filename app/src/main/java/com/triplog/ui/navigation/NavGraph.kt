@@ -10,10 +10,10 @@ import com.triplog.ui.logtrip.LogTripScreen
 import com.triplog.ui.trips.AllTripsScreen
 
 sealed class Screen(val route: String) {
-    object Home : Screen("home")
-    object LogTrip : Screen("log_trip")
-    object Expenses : Screen("expenses")
-    object AllTrips : Screen("all_trips")
+    data object Home : Screen("home")
+    data object LogTrip : Screen("log_trip")
+    data object Expenses : Screen("expenses")
+    data object AllTrips : Screen("all_trips")
 }
 
 @Composable
@@ -24,9 +24,9 @@ fun TripLogNavGraph(navController: NavHostController) {
     ) {
         composable(Screen.Home.route) {
             HomeScreen(
-                onNavigateToLogTrip = { navController.navigate(Screen.LogTrip.route) },
-                onNavigateToExpenses = { navController.navigate(Screen.Expenses.route) },
-                onNavigateToAllTrips = { navController.navigate(Screen.AllTrips.route) }
+                onNavigateToLogTrip = { navController.navigate(Screen.LogTrip.route) { launchSingleTop = true } },
+                onNavigateToExpenses = { navController.navigate(Screen.Expenses.route) { launchSingleTop = true } },
+                onNavigateToAllTrips = { navController.navigate(Screen.AllTrips.route) { launchSingleTop = true } }
             )
         }
         composable(Screen.LogTrip.route) {

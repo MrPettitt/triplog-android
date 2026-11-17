@@ -8,7 +8,10 @@ import com.triplog.domain.model.Trip
 import com.triplog.util.ConnectivityObserver
 import com.triplog.util.NetworkStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
 data class HomeUiState(
@@ -20,6 +23,8 @@ data class HomeUiState(
     val networkStatus: NetworkStatus = NetworkStatus.Available
 )
 
+private const val RECENT_TRIP_LIMIT = 5
+
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     tripRepository: TripRepository,
@@ -27,28 +32,28 @@ class HomeViewModel @Inject constructor(
     connectivityObserver: ConnectivityObserver
 ) : ViewModel() {
 
-    val uiState: StateFlow<HomeUiState> = combine(
+    private data class Totals(val trips: Int, val distanceKm: Double, val fuelSpentRands: Double)
+
+    private val totals = combine(
         tripRepository.totalTripCount,
         tripRepository.totalDistanceKm,
-        fuelExpenseRepository.totalExpenseRands,
+        fuelExpenseRepository.totalExpenseRands
+    ) { trips, distanceKm, fuelSpent ->
+        Totals(trips, distanceKm ?: 0.0, fuelSpent ?: 0.0)
+    }
+
+    val uiState: StateFlow<HomeUiState> = combine(
+        totals,
         tripRepository.pendingSyncCount,
         tripRepository.allTrips,
         connectivityObserver.networkStatus
-    ) { values ->
-        val tripCount = values[0] as Int
-        val distanceKm = (values[1] as? Double) ?: 0.0
-        val fuelSpent = (values[2] as? Double) ?: 0.0
-        val pending = values[3] as Int
-        @Suppress("UNCHECKED_CAST")
-        val trips = values[4] as List<Trip>
-        val network = values[5] as NetworkStatus
-
+    ) { totals, pending, trips, network ->
         HomeUiState(
-            totalTrips = tripCount,
-            totalDistanceKm = distanceKm,
-            totalFuelSpentRands = fuelSpent,
+            totalTrips = totals.trips,
+            totalDistanceKm = totals.distanceKm,
+            totalFuelSpentRands = totals.fuelSpentRands,
             pendingSyncCount = pending,
-            recentTrips = trips.take(5),
+            recentTrips = trips.take(RECENT_TRIP_LIMIT),
             networkStatus = network
         )
     }.stateIn(

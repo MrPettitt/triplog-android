@@ -1,4 +1,88 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">TripLog</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_log_trip">Log trip</string>
+    <string name="nav_fuel">Fuel</string>
+    <string name="nav_trips">Trips</string>
+    <string name="action_back">Back</string>
+
+    <!-- Sync status -->
+    <string name="status_synced">Synced</string>
+    <string name="status_pending">Pending</string>
+    <plurals name="sync_offline">
+        <item quantity="one">Offline: %d item waiting to sync</item>
+        <item quantity="other">Offline: %d items waiting to sync</item>
+    </plurals>
+    <string name="sync_all_synced">All data synced</string>
+    <plurals name="sync_syncing">
+        <item quantity="one">Syncing %d item...</item>
+        <item quantity="other">Syncing %d items...</item>
+    </plurals>
+
+    <!-- Home -->
+    <string name="greeting_morning">Good morning</string>
+    <string name="greeting_afternoon">Good afternoon</string>
+    <string name="greeting_evening">Good evening</string>
+    <string name="home_title">Your trip log</string>
+    <string name="home_total_distance">Total distance</string>
+    <string name="unit_km">km</string>
+    <string name="home_metric_trips">Trips</string>
+    <string name="home_metric_fuel_spend">Fuel spend</string>
+    <string name="home_action_log_trip">Log trip</string>
+    <string name="home_action_log_fuel">Log fuel</string>
+    <string name="home_recent_trips">Recent trips</string>
+    <string name="home_see_all">See all</string>
+    <string name="home_empty">No trips logged yet. Tap \"Log trip\" to add your first one.</string>
+
+    <!-- Log trip -->
+    <string name="log_trip_title">Log trip</string>
+    <string name="log_trip_subtitle">Saved on this device, synced when online</string>
+    <string name="field_start_location">Start location</string>
+    <string name="field_start_location_hint">e.g. Head Office, 15 Main St</string>
+    <string name="field_end_location">End location</string>
+    <string name="field_end_location_hint">e.g. Client Site, 84 Park Ave</string>
+    <string name="field_distance">Distance (km)</string>
+    <string name="field_distance_hint">0.0</string>
+    <string name="field_purpose">Purpose</string>
+    <string name="field_notes">Notes (optional)</string>
+    <string name="field_notes_hint">Anything worth remembering</string>
+    <string name="action_save_trip">Save trip</string>
+
+    <!-- Trip purposes -->
+    <string name="purpose_client_visit">Client Visit</string>
+    <string name="purpose_site_inspection">Site Inspection</string>
+    <string name="purpose_meeting">Meeting</string>
+    <string name="purpose_delivery">Delivery</string>
+    <string name="purpose_other">Other</string>
+
+    <!-- Fuel expense -->
+    <string name="fuel_title">Fuel expense</string>
+    <string name="fuel_subtitle">Add the receipt photo for your records</string>
+    <string name="field_litres">Litres</string>
+    <string name="field_amount">Amount (R)</string>
+    <string name="field_amount_hint">0.00</string>
+    <string name="field_odometer">Odometer (km)</string>
+    <string name="field_odometer_hint">e.g. 84320</string>
+    <string name="field_fuel_station">Fuel station</string>
+    <string name="field_fuel_station_hint">e.g. Engen Sandton</string>
+    <string name="field_receipt">Receipt photo</string>
+    <string name="receipt_description">Receipt</string>
+    <string name="receipt_captured">Captured</string>
+    <string name="receipt_tap_to_photograph">Tap to photograph receipt</string>
+    <string name="receipt_opens_camera">Opens your camera</string>
+    <string name="action_save_expense">Save expense</string>
+
+    <!-- All trips -->
+    <string name="all_trips_title">All trips</string>
+    <plurals name="all_trips_subtitle">
+        <item quantity="one">%d trip logged</item>
+        <item quantity="other">%d trips logged</item>
+    </plurals>
+    <string name="all_trips_empty">No trips logged yet.</string>
+
+    <!-- Validation -->
+    <string name="error_required_fields">Please fill in all required fields.</string>
 </resources>

@@ -1,6 +1,7 @@
 package com.triplog
 
 import android.os.Bundle
+import androidx.annotation.StringRes
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.SystemBarStyle
@@ -14,11 +15,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.work.*
+import com.triplog.R
 import com.triplog.ui.navigation.Screen
 import com.triplog.ui.navigation.TripLogNavGraph
 import com.triplog.ui.theme.*
@@ -28,7 +31,7 @@ import javax.inject.Inject
 
 data class BottomNavItem(
     val screen: Screen,
-    val label: String,
+    @StringRes val label: Int,
     val icon: ImageVector
 )
 
@@ -67,10 +70,10 @@ fun TripLogApp() {
     val currentRoute = currentBackStack?.destination?.route
 
     val bottomNavItems = listOf(
-        BottomNavItem(Screen.Home, "Home", Icons.Default.Home),
-        BottomNavItem(Screen.LogTrip, "Log trip", Icons.Default.AddLocation),
-        BottomNavItem(Screen.Expenses, "Fuel", Icons.Default.LocalGasStation),
-        BottomNavItem(Screen.AllTrips, "Trips", Icons.AutoMirrored.Filled.List),
+        BottomNavItem(Screen.Home, R.string.nav_home, Icons.Default.Home),
+        BottomNavItem(Screen.LogTrip, R.string.nav_log_trip, Icons.Default.AddLocation),
+        BottomNavItem(Screen.Expenses, R.string.nav_fuel, Icons.Default.LocalGasStation),
+        BottomNavItem(Screen.AllTrips, R.string.nav_trips, Icons.AutoMirrored.Filled.List),
     )
 
     val showBottomBar = currentRoute in bottomNavItems.map { it.screen.route }
@@ -89,14 +92,15 @@ fun TripLogApp() {
                 ) {
                     bottomNavItems.forEach { item ->
                         val selected = currentRoute == item.screen.route
+                        val label = stringResource(item.label)
                         NavigationBarItem(
                             icon = {
                                 Icon(
                                     item.icon,
-                                    contentDescription = item.label
+                                    contentDescription = label
                                 )
                             },
-                            label = { Text(item.label, style = MaterialTheme.typography.labelMedium) },
+                            label = { Text(label, style = MaterialTheme.typography.labelMedium) },
                             selected = selected,
                             onClick = {
                                 navController.navigate(item.screen.route) {

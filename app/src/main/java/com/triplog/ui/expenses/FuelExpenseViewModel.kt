@@ -1,7 +1,9 @@
 package com.triplog.ui.expenses
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.triplog.R
 import com.triplog.data.repository.FuelExpenseRepository
 import com.triplog.domain.model.FuelExpense
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,7 +24,7 @@ data class ExpenseUiState(
     val receiptImagePath: String? = null,
     val isSaving: Boolean = false,
     val saveSuccess: Boolean = false,
-    val errorMessage: String? = null
+    @StringRes val errorMessageRes: Int? = null
 )
 
 @HiltViewModel
@@ -35,12 +37,12 @@ class FuelExpenseViewModel @Inject constructor(
 
     val allExpenses = fuelExpenseRepository.allExpenses
 
-    fun onLitresChange(value: String) = _uiState.update { it.copy(litres = value) }
-    fun onAmountChange(value: String) = _uiState.update { it.copy(amountRands = value) }
-    fun onOdometerChange(value: String) = _uiState.update { it.copy(odometerKm = value) }
-    fun onFuelStationChange(value: String) = _uiState.update { it.copy(fuelStation = value) }
-    fun onDateChange(value: LocalDate) = _uiState.update { it.copy(date = value) }
-    fun onReceiptCaptured(path: String) = _uiState.update { it.copy(receiptImagePath = path) }
+    fun onLitresChange(value: String) = _uiState.update { it.copy(litres = value, errorMessageRes = null) }
+    fun onAmountChange(value: String) = _uiState.update { it.copy(amountRands = value, errorMessageRes = null) }
+    fun onOdometerChange(value: String) = _uiState.update { it.copy(odometerKm = value, errorMessageRes = null) }
+    fun onFuelStationChange(value: String) = _uiState.update { it.copy(fuelStation = value, errorMessageRes = null) }
+    fun onDateChange(value: LocalDate) = _uiState.update { it.copy(date = value, errorMessageRes = null) }
+    fun onReceiptCaptured(path: String) = _uiState.update { it.copy(receiptImagePath = path, errorMessageRes = null) }
 
     fun saveExpense() {
         val state = _uiState.value
@@ -49,12 +51,12 @@ class FuelExpenseViewModel @Inject constructor(
         val odometer = state.odometerKm.toIntOrNull()
 
         if (litres == null || amount == null || odometer == null || state.fuelStation.isBlank()) {
-            _uiState.update { it.copy(errorMessage = "Please fill in all required fields.") }
+            _uiState.update { it.copy(errorMessageRes = R.string.error_required_fields) }
             return
         }
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isSaving = true, errorMessage = null) }
+            _uiState.update { it.copy(isSaving = true, errorMessageRes = null) }
             val expense = FuelExpense(
                 date = state.date,
                 litres = litres,
@@ -73,5 +75,5 @@ class FuelExpenseViewModel @Inject constructor(
         _uiState.value = ExpenseUiState()
     }
 
-    fun clearError() = _uiState.update { it.copy(errorMessage = null) }
+    fun clearError() = _uiState.update { it.copy(errorMessageRes = null) }
 }

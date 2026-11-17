@@ -13,7 +13,9 @@ import androidx.compose.material.icons.filled.AddLocationAlt
 import androidx.compose.material.icons.filled.LocalGasStation
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.triplog.R
 import com.triplog.ui.TripCard
 import com.triplog.ui.theme.*
 import com.triplog.util.NetworkStatus
@@ -29,11 +32,12 @@ import com.triplog.util.formatKm
 import com.triplog.util.formatRands
 import java.time.LocalTime
 
-private fun greeting(): String = when (LocalTime.now().hour) {
-    in 5..11 -> "Good morning"
-    in 12..17 -> "Good afternoon"
-    else -> "Good evening"
-}
+@Composable
+private fun greeting(): String = stringResource(when (LocalTime.now().hour) {
+    in 5..11 -> R.string.greeting_morning
+    in 12..17 -> R.string.greeting_afternoon
+    else -> R.string.greeting_evening
+})
 
 @Composable
 fun HomeScreen(
@@ -42,7 +46,7 @@ fun HomeScreen(
     onNavigateToAllTrips: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
-    val state by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
     val isOnline = state.networkStatus == NetworkStatus.Available
 
     LazyColumn(
@@ -54,7 +58,7 @@ fun HomeScreen(
         item {
             Column(Modifier.padding(horizontal = 20.dp, vertical = 20.dp)) {
                 Text(greeting(), style = MaterialTheme.typography.bodyLarge, color = TextSecondary)
-                Text("Your trip log", style = MaterialTheme.typography.headlineLarge, color = TextPrimary)
+                Text(stringResource(R.string.home_title), style = MaterialTheme.typography.headlineLarge, color = TextPrimary)
             }
         }
 
@@ -84,8 +88,8 @@ fun HomeScreen(
                     .padding(horizontal = 20.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                ActionTile("Log trip", Icons.Default.AddLocationAlt, onNavigateToLogTrip, Modifier.weight(1f))
-                ActionTile("Log fuel", Icons.Default.LocalGasStation, onNavigateToExpenses, Modifier.weight(1f))
+                ActionTile(stringResource(R.string.home_action_log_trip), Icons.Default.AddLocationAlt, onNavigateToLogTrip, Modifier.weight(1f))
+                ActionTile(stringResource(R.string.home_action_log_fuel), Icons.Default.LocalGasStation, onNavigateToExpenses, Modifier.weight(1f))
             }
             Spacer(Modifier.height(28.dp))
         }
@@ -98,9 +102,9 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Recent trips", style = MaterialTheme.typography.titleLarge, color = TextPrimary)
+                Text(stringResource(R.string.home_recent_trips), style = MaterialTheme.typography.titleLarge, color = TextPrimary)
                 TextButton(onClick = onNavigateToAllTrips) {
-                    Text("See all", color = Brand400, style = MaterialTheme.typography.labelLarge)
+                    Text(stringResource(R.string.home_see_all), color = Brand400, style = MaterialTheme.typography.labelLarge)
                 }
             }
             Spacer(Modifier.height(4.dp))
@@ -115,7 +119,7 @@ fun HomeScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        "No trips logged yet. Tap \"Log trip\" to add your first one.",
+                        stringResource(R.string.home_empty),
                         color = TextSecondary,
                         style = MaterialTheme.typography.bodyLarge
                     )
@@ -140,7 +144,7 @@ private fun SummaryCard(distanceKm: Double, trips: Int, fuelSpent: Double, modif
             .background(BrandGradient)
             .padding(22.dp)
     ) {
-        Text("Total distance", style = MaterialTheme.typography.labelLarge, color = Color.White.copy(alpha = 0.85f))
+        Text(stringResource(R.string.home_total_distance), style = MaterialTheme.typography.labelLarge, color = Color.White.copy(alpha = 0.85f))
         Row(verticalAlignment = Alignment.Bottom) {
             Text(
                 formatKm(distanceKm),
@@ -149,7 +153,7 @@ private fun SummaryCard(distanceKm: Double, trips: Int, fuelSpent: Double, modif
             )
             Spacer(Modifier.width(8.dp))
             Text(
-                "km",
+                stringResource(R.string.unit_km),
                 style = MaterialTheme.typography.titleLarge,
                 color = Color.White.copy(alpha = 0.85f),
                 modifier = Modifier.padding(bottom = 6.dp)
@@ -164,8 +168,8 @@ private fun SummaryCard(distanceKm: Double, trips: Int, fuelSpent: Double, modif
                 .padding(14.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Metric("Trips", trips.toString())
-            Metric("Fuel spend", formatRands(fuelSpent))
+            Metric(stringResource(R.string.home_metric_trips), trips.toString())
+            Metric(stringResource(R.string.home_metric_fuel_spend), formatRands(fuelSpent))
         }
     }
 }
@@ -181,10 +185,11 @@ private fun Metric(label: String, value: String) {
 @Composable
 private fun SyncBanner(isOnline: Boolean, pending: Int, modifier: Modifier = Modifier) {
     val color = if (isOnline) GreenSync else Amber400
+    val resources = LocalContext.current.resources
     val text = when {
-        !isOnline -> "Offline: $pending item(s) waiting to sync"
-        pending == 0 -> "All data synced"
-        else -> "Syncing $pending item(s)..."
+        !isOnline -> resources.getQuantityString(R.plurals.sync_offline, pending, pending)
+        pending == 0 -> stringResource(R.string.sync_all_synced)
+        else -> resources.getQuantityString(R.plurals.sync_syncing, pending, pending)
     }
     Row(
         modifier = modifier

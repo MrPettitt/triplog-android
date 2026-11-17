@@ -52,6 +52,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.activity.compose)
 
     // Compose
@@ -81,7 +82,7 @@ dependencies {
     implementation(libs.retrofit.moshi)
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
-    implementation(libs.moshi.kotlin)
+    implementation(libs.moshi)
     ksp(libs.moshi.codegen)
 
     // WorkManager
@@ -96,6 +97,8 @@ dependencies {
     // Image loading
     implementation(libs.coil)
 
-    // Permissions
-    implementation(libs.accompanist.permissions)
+
+    // Unit tests
+    testImplementation(libs.junit)
+    testImplementation(libs.coroutines.test)
 }

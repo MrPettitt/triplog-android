@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.room.Room
 import androidx.work.WorkManager
 import com.squareup.moshi.Moshi
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.triplog.BuildConfig
 import com.triplog.data.local.AppDatabase
 import com.triplog.data.local.dao.FuelExpenseDao
@@ -46,7 +45,6 @@ object AppModule {
     @Provides
     @Singleton
     fun provideMoshi(): Moshi = Moshi.Builder()
-        .addLast(KotlinJsonAdapterFactory())
         .build()
 
     @Provides

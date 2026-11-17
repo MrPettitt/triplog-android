@@ -1,5 +1,7 @@
 package com.triplog.domain.model
 
+import androidx.annotation.StringRes
+import com.triplog.R
 import java.time.LocalDateTime
 
 data class Trip(
@@ -15,10 +17,10 @@ data class Trip(
     val createdAt: LocalDateTime = LocalDateTime.now()
 )
 
-enum class TripPurpose(val label: String) {
-    CLIENT_VISIT("Client Visit"),
-    SITE_INSPECTION("Site Inspection"),
-    MEETING("Meeting"),
-    DELIVERY("Delivery"),
-    OTHER("Other")
+enum class TripPurpose(@StringRes val labelRes: Int) {
+    CLIENT_VISIT(R.string.purpose_client_visit),
+    SITE_INSPECTION(R.string.purpose_site_inspection),
+    MEETING(R.string.purpose_meeting),
+    DELIVERY(R.string.purpose_delivery),
+    OTHER(R.string.purpose_other)
 }
