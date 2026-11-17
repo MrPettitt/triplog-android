@@ -128,4 +128,20 @@
     <string name="filter_clear_all">Clear filters</string>
     <string name="filtered_trips_subtitle">Showing %1$d of %2$d trips</string>
     <string name="filtered_fuel_subtitle">Showing %1$d of %2$d expenses, %3$s in total</string>
+
+    <!-- Monthly summary -->
+    <string name="nav_summary">Summary</string>
+    <string name="summary_title">Monthly summary</string>
+    <plurals name="summary_subtitle">
+        <item quantity="one">%d month with activity</item>
+        <item quantity="other">%d months with activity</item>
+    </plurals>
+    <string name="summary_empty">Nothing to summarise yet. Log a trip or a fuel expense and it will appear here.</string>
+    <string name="summary_distance">Distance</string>
+    <string name="summary_litres">Fuel</string>
+    <plurals name="summary_fill_ups">
+        <item quantity="one">%d fill-up</item>
+        <item quantity="other">%d fill-ups</item>
+    </plurals>
+    <string name="export_summary">Export monthly summary as CSV</string>
 </resources>

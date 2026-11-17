@@ -10,6 +10,7 @@ import com.triplog.ui.expenses.FuelExpenseScreen
 import com.triplog.ui.expenses.FuelListScreen
 import com.triplog.ui.home.HomeScreen
 import com.triplog.ui.logtrip.LogTripScreen
+import com.triplog.ui.summary.SummaryScreen
 import com.triplog.ui.trips.AllTripsScreen
 
 const val ARG_TRIP_ID = "tripId"
@@ -21,6 +22,7 @@ sealed class Screen(val route: String) {
     data object LogTrip : Screen("log_trip")
     data object Expenses : Screen("expenses")
     data object AllTrips : Screen("all_trips")
+    data object Summary : Screen("summary")
 
     /** Screens reached from the tabs. */
     data object NewExpense : Screen("expense_form")
@@ -72,6 +74,9 @@ fun TripLogNavGraph(navController: NavHostController) {
             arguments = listOf(navArgument(ARG_EXPENSE_ID) { type = NavType.LongType })
         ) {
             FuelExpenseScreen(onNavigateBack = { navController.popBackStack() })
+        }
+        composable(Screen.Summary.route) {
+            SummaryScreen()
         }
         composable(Screen.AllTrips.route) {
             AllTripsScreen(
